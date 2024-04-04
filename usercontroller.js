@@ -36,8 +36,13 @@ exports.getUsers = async(req, res)=>{
 
 exports.getAllUsers = async (req, res) => {
     try {
-        // console.log(req.query)
-        const users = await UserModel.find(req.query);
+        let query = UserModel.find();
+
+        if(req.query.fields){
+            const fields = req.query.fields.split(',').join(' ');
+            query = query.select(fields);
+        }
+        const users = await query.exec();
 
         if (!users || users.length === 0) {
             return res.status(404).json({ error: 'No users found' });
