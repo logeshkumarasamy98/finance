@@ -5,8 +5,6 @@ const job = require('./overDueCalculator')
 const app = express();
 const currentTime = new Date();
 console.log(currentTime);
-
-
 app.use(express.json());
 
 app.use((req, res, next) => {
