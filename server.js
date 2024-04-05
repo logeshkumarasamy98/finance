@@ -28,10 +28,13 @@ app.post(('/api/user'), userControllers.createUser);
 
 app.get(('/api/user/:loanNumber'), userControllers.getUsers);
 
-
 app.get(('/api/user'), userControllers.getAllUsers);
 
 app.patch(('/api/user/:customId'), userControllers.updateUser);
+
+// app.get(('/api/unpaid/unpaidloan'), userControllers.test)
+
+app.get(('/api/unpaid/activeloanPayer'), userControllers.activeLoanPayer)
 
 job.start();
 

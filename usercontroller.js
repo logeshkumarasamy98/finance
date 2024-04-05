@@ -70,3 +70,69 @@ exports.updateUser = async (req, res) => {
         res.status(400).json({ error: err.message });
     }
 };
+
+// exports.test = async (req, res) => {
+//     try {
+//         const now = new Date();
+//         const IST_offset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+//         const IST_date = new Date(now.getTime() + IST_offset);
+
+//         const users = await UserModel.aggregate([
+//             {
+//                 $match: {
+//                     "$or": [
+//                         { "loanDetails.instalmentObject.paidDate": null },
+//                         { "loanDetails.instalmentObject.paidDate": { "$lte": new Date() } }
+//                     ]
+//                 }
+//             },
+//             {
+//                 $project: {
+//                     "loanNumber": "$loanNumber",
+//                     "loanPayerName": "$details.loanPayerDetails.name"
+//                 }
+//             }
+//         ]);
+
+//         res.status(200).json({
+//             status: 'success',
+//             data: users
+//         });
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).json({
+//             status: 'error',
+//             message: 'An error occurred while fetching overdue installments.'
+//         });
+//     }
+// };
+
+
+exports.activeLoanPayer = async(req, res) =>{
+    try{
+        users = await UserModel.aggregate([
+            {
+            $match: {
+                "loanDetails.isActive":true,
+            }},
+            {
+                $project:{
+                    "loanNumber": "$loanNumber",
+                    "loanPayerName": "$details.loanPayerDetails.name",
+                    "mobileNum": "$details.loanPayerDetails.mobileNum"
+                }
+            }
+        ]);
+        res.status(200).json({
+            status:'Success',
+            data: users
+        })
+        
+    }catch (err) {
+        console.error(err);
+        res.status(500).json({
+            status: 'error',
+            message: 'An error occurred while fetching overdue installments.'
+        });
+    }
+}
