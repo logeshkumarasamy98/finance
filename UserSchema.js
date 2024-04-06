@@ -17,19 +17,24 @@ const userSchema = new mongoose.Schema({
             isPaid: { type: Boolean, default: false },
             dueDate: { type: Date, required: true },
             paidDate: { type: Date },
-            paidBy: {type: String, required: true},
+            emiPaid: {type: Number, default:null},
             recipientNumber: { type: Number },
             principleAmountPerMonth: { type: Number },
             interestAmount: { type: Number },
             totalEmiAmount: { type: Number },
             totalEmiAmountRoundoff:{type: Number},
             overdueAmount: { type: Number },
-            overdueBalance: { type: Number }
+            overduePaid: { type: Number },
+            overDueBalance:{type: Number},
         }],
         totalEmiAlreadyPaid: {type: Number},
-        totalEmiToBePaid: { type: Number},
+        totalEmiAmount: { type: Number},
+        totalEmiBalance:{type:Number},
         totalOverdueAmountToBePaid: {type: Number},
         totalEmiAndOverdueToBePaid: {type:Number},
+        emiPending:{type:Boolean, default:false},
+        pendingEmiNum:{type: Number, default:null},
+        emiPendingDate:{type : Date, default:null},
 
     }, 
 
@@ -38,7 +43,7 @@ const userSchema = new mongoose.Schema({
             name: { type: String, required: true },
             fatherName: { type: String },
             work: { type: String },
-            mobileNum: { type: Number },
+            mobileNum1: { type: Number, required: true },
             mobileNum2: { type: Number },
             pincode: { type: Number },
             address: { type: String },
@@ -46,10 +51,10 @@ const userSchema = new mongoose.Schema({
             photo: { type: String }
         },
         guaranteeDetail: {
-            name: { type: String },
+            name: { type: String, required: true },
             fatherName: { type: String },
             work: { type: String },
-            mobileNum: { type: Number },
+            mobileNum1: { type: Number, required: true },
             mobileNum2: { type: Number },
             pincode: { type: Number },
             address: { type: String },
@@ -57,17 +62,16 @@ const userSchema = new mongoose.Schema({
             photo: { type: String }
         },
         vehicle: {
-            type: { type: String },
-            model: { type: String },
-            vehicleNumber: { type: String },
-            engineNum: { type: String },
-            chaseNum: { type: String },
-            variant: { type: String },
+            type: { type: String, required: true },
+            model: { type: String, required: true },
+            vehicleNumber: { type: String, required: true },
+            engineNum: { type: String, required: true },
+            chaseNum: { type: String, required: true },
+            variant: { type: String, required: true },
             photo: { type: String }
         }
     }
 });
-
 
 
 userSchema.pre('save', async function(next) {
@@ -93,34 +97,35 @@ userSchema.pre('save', async function(next) {
                     isPaid: false,
                     dueDate: currentDate,
                     paidDate: null,
+                    emiPaid: null,
                     recipientNumber: null,
                     principleAmountPerMonth: monthlyPrincipal,
                     interestAmount: monthlyInterestAmount,
                     totalEmiAmount: monthlyTotalAmount,
                     totalEmiAmountRoundoff: roundedTotalEmiAmount,
                     overdueAmount: null,
-                    overdueBalance: null,
+                    overduePaid: null,
+                    overDueBalance:null
                 });
             }
 
-            // Calculate totalEmiToBePaid after all installment objects have been added
-            const totalEmiToBePaid = this.loanDetails.instalmentObject.reduce((total, installment) => {
+            // Calculate totalEmiAmount after all installment objects have been added
+            const totalEmiAmount = this.loanDetails.instalmentObject.reduce((total, installment) => {
                 return total + installment.totalEmiAmount;
             }, 0);
 
-            // Set totalEmiToBePaid in the loanDetails
-            this.loanDetails.totalEmiAlreadyPaid = null
-            this.loanDetails.totalEmiToBePaid = totalEmiToBePaid;
+            // Set totalEmiAmount in the loanDetails
+            this.loanDetails.totalEmiAlreadyPaid = 0,
+            this.loanDetails.totalEmiAmount = totalEmiAmount;
             this.loanDetails.totalOverdueAmountToBePaid = null,
-            this.loanDetails.totalEmiAndOverdueToBePaid = null
+            this.loanDetails.totalEmiAndOverdueToBePaid = null,
+            this.loanDetails.totalEmiBalance=totalEmiAmount
         }
         next(); // Call next to proceed with the save operation
     } catch (error) {
         next(error); // Pass any errors to the error handling middleware
     }
 });
-
-
 
 const UserModel = mongoose.model('Loan', userSchema);
 
