@@ -1,4 +1,5 @@
-const UserModel = require('./UserSchema');
+const UserModel = require('../model/loanSchema');
+
 async function updateOverdueInstallmentsForOne(loanNumber) {
     try {
         const currentDate = new Date();
@@ -94,5 +95,40 @@ async function updateLoanDetails(loanNumber) {
       console.error('Error updating loan details:', error.message);
     }
   }
+
+
+  async function getLastReceiptNumber() {
+    try {
+        // Find all loan documents
+        const allLoans = await UserModel.find();
+
+        // Array to store all receipt numbers
+        let receiptNumbers = [];
+
+        // Loop through all loans and their installment objects to collect receipt numbers
+        allLoans.forEach(loan => {
+            loan.loanDetails.instalmentObject.forEach(installment => {
+                if (installment.receiptNumber !== null && !isNaN(installment.receiptNumber)) {
+                    receiptNumbers.push(installment.receiptNumber);
+                }
+            });
+        });
+
+        // Sort receipt numbers in descending order
+        receiptNumbers.sort((a, b) => b - a);
+
+        // Get the last receipt number
+        const lastReceiptNumber = receiptNumbers.length > 0 ? receiptNumbers[0] : null;
+
+        // Close connection
+
+        return lastReceiptNumber;
+    } catch (error) {
+        console.error("Error getting last receipt number:", error);
+        throw error;
+    }
+}
+
+
   
-module.exports ={updateOverdueInstallmentsForOne, updateLoanDetails}
+module.exports ={updateOverdueInstallmentsForOne, updateLoanDetails, getLastReceiptNumber}

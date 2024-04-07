@@ -1,9 +1,10 @@
-const UserModel = require('./UserSchema');
-const {updateOverdueInstallmentsForOne, updateLoanDetails} = require('./functions')
-const {updateOverdueInstallments} = require('./overDueCalculator')
+const UserModel = require('../model/loanSchema');
+const {updateOverdueInstallmentsForOne, updateLoanDetails, getLastReceiptNumber} = require('../customFunctions/loanFunctions')
+const {updateOverdueInstallments} = require('../customFunctions/overDueCalculator')
 
 exports.createUser = async (req, res) => {
   try {
+        
       const lastUser = await UserModel.findOne({}, {}, { sort: { 'loanNumber': -1 } });
       let lastLoanNumber = 0;
       if (lastUser && !isNaN(lastUser.loanNumber)) {
@@ -55,45 +56,11 @@ exports.getAllUsers = async (req, res) => {
     }
 };
 
-
-
-exports.activeLoanPayer = async(req, res) =>{
-    try{
-       const users = await UserModel.aggregate([
-            {
-            $match: {
-                "loanDetails.isActive":true,
-            }},
-            {
-                $project:{
-                    "loanNumber": "$loanNumber",
-                    "loanPayerName": "$details.loanPayerDetails.name",
-                    "loanBalance" : "$loanDetails.totalEmiAmount",
-                    "mobileNum1": "$details.loanPayerDetails.mobileNum1",
-                    "vehicalNum" : "$details.vehicle.vehicleNumber",
-                    "vehicalType" : "$details.vehicle.type",
-                    "vehicalModel": "$details.vehicle.model"
-                }
-            }
-        ]);
-        res.status(200).json({
-            status:'Success',
-            data: users
-        })
-        
-    }catch (err) {
-        console.error(err);
-        res.status(500).json({
-            status: 'error',
-            message: 'An error occurred while fetching overdue installments.'
-        });
-    }
-}
-
-
 exports.updateLoanPayer = async (req, res) => {
     try {
+        const previousReceiptNumber = await getLastReceiptNumber();
         const loanNumber = req.params.loanNumber;
+        const receiptNumber = previousReceiptNumber + 1;
         const { installmentNo, emiPaid, overdueAmount, overduePaid, paidDate } = req.body;
         // Find the user by loanNumber
         const user = await UserModel.findOne({ loanNumber });
@@ -115,6 +82,8 @@ exports.updateLoanPayer = async (req, res) => {
         // Calculate overDueBalance
         const overDueBalance = overdueAmount - overduePaid;
         installmentObject.overDueBalance = overDueBalance;
+        // Patch receipt number
+        installmentObject.receiptNumber = receiptNumber;
 
         if (paidDate) {
             installmentObject.paidDate = paidDate;

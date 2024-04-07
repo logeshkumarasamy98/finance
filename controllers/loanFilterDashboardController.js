@@ -1,4 +1,4 @@
-const UserModel = require('./UserSchema');
+const UserModel = require('../model/loanSchema');
 
 exports.activeLoanPayer = async(req, res) =>{
     try{
@@ -21,6 +21,7 @@ exports.activeLoanPayer = async(req, res) =>{
         ]);
         res.status(200).json({
             status:'Success',
+            length:users.length,
             data: users
         })
         

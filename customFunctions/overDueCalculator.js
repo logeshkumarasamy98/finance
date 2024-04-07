@@ -1,7 +1,7 @@
 const cron = require('node-cron');
-const UserModel = require('./UserSchema');
+const UserModel = require('../model/loanSchema');
 
-// async function calculateOverdueAmountsManually() {
+// async function calculateOverdueAmountsAutomatically() {
 //     try {
 //         // Find all loans where due date is passed and isPaid is false
 //         const overdueLoans = await UserModel.find({
@@ -94,7 +94,7 @@ async function updateOverdueInstallments() {
     const job = cron.schedule('30 00 * * *', async () => {
     console.log('cron started..');
     try {
-    //   await calculateOverdueAmountsManually();
+    //   await calculateOverdueAmountsAutomatically();
       await updateOverdueInstallments();
     } catch (error) {
       console.error('Error calculating overdue amounts:', error);
