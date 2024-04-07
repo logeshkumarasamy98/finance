@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const UserModel = require('../model/loanSchema');
+const UserModel = require('../model/loanModel');
 
 // async function calculateOverdueAmountsAutomatically() {
 //     try {

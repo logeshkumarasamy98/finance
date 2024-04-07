@@ -1,4 +1,4 @@
-const UserModel = require('../model/loanSchema');
+const UserModel = require('../model/loanModel');
 
 async function updateOverdueInstallmentsForOne(loanNumber) {
     try {

@@ -1,4 +1,4 @@
-const UserModel = require('../model/loanSchema');
+const UserModel = require('../model/loanModel');
 
 exports.activeLoanPayer = async(req, res) =>{
     try{

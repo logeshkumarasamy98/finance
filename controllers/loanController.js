@@ -1,4 +1,4 @@
-const UserModel = require('../model/loanSchema');
+const UserModel = require('../model/loanModel');
 const {updateOverdueInstallmentsForOne, updateLoanDetails, getLastReceiptNumber} = require('../customFunctions/loanFunctions')
 const {updateOverdueInstallments} = require('../customFunctions/overDueCalculator')
 
