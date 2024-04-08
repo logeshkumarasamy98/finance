@@ -1,11 +1,13 @@
 const express = require ('express');
-const userControllers = require('./controllers/loanController');
+const loanController = require('./controllers/loanController');
 const filterDashboardController = require('./controllers/loanFilterDashboardController')
+const authController = require('./controllers/authController');
 const app = express();
 app.use(express.json());
+// const jwt = require('jsonwebtoken'); 
+const {verifyToken} = require('./customFunctions/authFunction')
 
-
-
+// const your_secret_key = "9d7e0cf9b9a5ef1f1b4a6e5f7c8d3b2a";
 
 
 app.use((req, res, next) => {
@@ -17,19 +19,20 @@ app.use((req, res, next) => {
   
 
 
+app.post(('/api/loan'), loanController.createUser);
 
-app.post(('/api/user'), userControllers.createUser);
+app.get(('/api/loan/:loanNumber'), loanController.getUsers);
 
-app.get(('/api/user/:loanNumber'), userControllers.getUsers);
+app.get(('/api/loan'), verifyToken, loanController.getAllUsers);
 
-app.get(('/api/user'), userControllers.getAllUsers);
+app.patch(('/api/loan/patch/:loanNumber'), loanController.updateLoanPayer);
 
-app.patch(('/api/user/patch/:loanNumber'), userControllers.updateLoanPayer);
+app.get(('/api/loan/activeloanPayer'), filterDashboardController.activeLoanPayer);
 
-app.get(('/api/unpaid/activeloanPayer'), filterDashboardController.activeLoanPayer);
+app.get(('/api/loan/emiPending'), filterDashboardController.pendingEmiPayer);
 
-app.get(('/api/unpaid/emiPending'), filterDashboardController.pendingEmiPayer);
+app.get(('/api/loan/totalemiAmountPending'), filterDashboardController.totalEmiBalanceSum);
 
-app.get(('/api/unpaid/totalemiAmountPending'), filterDashboardController.totalEmiBalanceSum);
+app.post('/signin', authController.signIn)
 
 module.exports = app;

@@ -2,6 +2,8 @@ const UserModel = require('../model/loanModel');
 const {updateOverdueInstallmentsForOne, updateLoanDetails, getLastReceiptNumber} = require('../customFunctions/loanFunctions')
 const {updateOverdueInstallments} = require('../customFunctions/overDueCalculator')
 
+
+
 exports.createUser = async (req, res) => {
   try {
         
