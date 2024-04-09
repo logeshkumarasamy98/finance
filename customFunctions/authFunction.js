@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken'); 
+require('dotenv').config({path:'./config.env'});
+const bcrypt = require('bcryptjs');
 
-const your_secret_key = "9d7e0cf9b9a5ef1f1b4a6e5f7c8d3b2a";
+const your_secret_key = process.env.SECRET_KEY;
 
 
 function verifyToken(req, res, next) {

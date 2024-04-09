@@ -6,6 +6,7 @@ const app = express();
 app.use(express.json());
 // const jwt = require('jsonwebtoken'); 
 const {verifyToken} = require('./customFunctions/authFunction')
+const bcrypt = require('bcryptjs');
 
 // const your_secret_key = "9d7e0cf9b9a5ef1f1b4a6e5f7c8d3b2a";
 
@@ -33,6 +34,8 @@ app.get(('/api/loan/emiPending'), filterDashboardController.pendingEmiPayer);
 
 app.get(('/api/loan/totalemiAmountPending'), filterDashboardController.totalEmiBalanceSum);
 
-app.post('/signin', authController.signIn)
+app.post('/api/signin', authController.signIn)
+app.post('/api/signup', authController.signup)
+
 
 module.exports = app;

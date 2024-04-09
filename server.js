@@ -1,14 +1,10 @@
 const express = require('express');
-const { job } = require('./customFunctions/overDueCalculator');
 const app = require('./app');
+require('dotenv').config({path:'./config.env'});
 
 
 app.use(express.json());
 
-
-
-
-job.start();
 
 module.exports = {  app };
 

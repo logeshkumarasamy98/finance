@@ -1,4 +1,3 @@
-const cron = require('node-cron');
 const UserModel = require('../model/loanModel');
 
 // async function calculateOverdueAmountsAutomatically() {
@@ -85,20 +84,8 @@ async function updateOverdueInstallments() {
         console.log('Updated overdue installments successfully.');
     } catch (error) {
         console.error('Error updating overdue installments:', error);
+        return
     }
 }
 
-
-// Define cron job to run the function daily at 2:45 PM
-// const job = cron.schedule('* * * * * *', async () => {
-    const job = cron.schedule('30 00 * * *', async () => {
-    console.log('cron started..');
-    try {
-    //   await calculateOverdueAmountsAutomatically();
-      await updateOverdueInstallments();
-    } catch (error) {
-      console.error('Error calculating overdue amounts:', error);
-    }
-    console.log('cron stopped.');
-  });
-  module.exports = { updateOverdueInstallments, job };
+  module.exports = { updateOverdueInstallments };
