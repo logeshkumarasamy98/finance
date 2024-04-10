@@ -22,11 +22,11 @@ app.use((req, res, next) => {
 
 app.post(('/api/loan'), loanController.createUser);
 
-app.get(('/api/loan/:loanNumber'), loanController.getUsers);
+app.get(('/api/loan/:loanNumber'), verifyToken, loanController.getUsers);
 
 app.get(('/api/loan'), verifyToken, loanController.getAllUsers);
 
-app.patch(('/api/loan/patch/:loanNumber'), loanController.updateLoanPayer);
+app.patch(('/api/loan/patch/:loanNumber'),  loanController.updateLoanPayer);
 
 app.get(('/api/loan/activeloanPayer'), filterDashboardController.activeLoanPayer);
 
@@ -34,7 +34,7 @@ app.get(('/api/loan/emiPending'), filterDashboardController.pendingEmiPayer);
 
 app.get(('/api/loan/totalemiAmountPending'), filterDashboardController.totalEmiBalanceSum);
 
-app.post('/api/signin', authController.signIn)
+app.post('/api/signin',  authController.signIn)
 app.post('/api/signup', authController.signup)
 
 

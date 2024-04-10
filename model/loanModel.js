@@ -80,8 +80,8 @@ userSchema.pre('save', async function(next) {
             const { instalment, startDate, totalPrincipalAmount, interestRate } = this.loanDetails;
             const monthlyInterestRate = interestRate / 100; // Convert annual interest rate to monthly rate
 
-            const monthlyPrincipal = totalPrincipalAmount / instalment;
-            const totalLoan = totalPrincipalAmount;
+            let monthlyPrincipal = totalPrincipalAmount / instalment;
+            let totalLoan = totalPrincipalAmount;
 
             for (let i = 1; i <= instalment; i++) {
                 let currentDate = new Date(startDate); // Create a new Date object for each iteration
@@ -90,7 +90,16 @@ userSchema.pre('save', async function(next) {
                 const monthlyInterestAmount = totalLoan * monthlyInterestRate;
                 const monthlyTotalAmount = monthlyInterestAmount + monthlyPrincipal;
 
-                const roundedTotalEmiAmount = Math.round(monthlyTotalAmount / 10) * 10; // Round off to nearest 10-digit number
+                // Custom rounding function to round off to the next 5
+                const roundToNext5 = (num) => Math.ceil(num / 5) * 5;
+
+                // Round off monthlyPrincipal and monthlyInterestAmount to the next 5
+                monthlyPrincipal = roundToNext5(monthlyPrincipal);
+                const roundedMonthlyInterestAmount = roundToNext5(monthlyInterestAmount);
+
+                // const monthlyTotalAmount = monthlyPrincipal + roundedMonthlyInterestAmount
+
+                const roundedTotalEmiAmount = (monthlyPrincipal + roundedMonthlyInterestAmount); // Round off to nearest 10-digit number
 
                 this.loanDetails.instalmentObject.push({
                     installmentNo: i,
@@ -100,12 +109,12 @@ userSchema.pre('save', async function(next) {
                     emiPaid: null,
                     receiptNumber: null,
                     principleAmountPerMonth: monthlyPrincipal,
-                    interestAmount: monthlyInterestAmount,
+                    interestAmount: roundedMonthlyInterestAmount,
                     totalEmiAmount: monthlyTotalAmount,
                     totalEmiAmountRoundoff: roundedTotalEmiAmount,
                     overdueAmount: null,
                     overduePaid: null,
-                    overDueBalance:null
+                    overDueBalance: null
                 });
             }
 
@@ -119,13 +128,14 @@ userSchema.pre('save', async function(next) {
             this.loanDetails.totalEmiAmount = totalEmiAmount;
             this.loanDetails.totalOverdueAmountToBePaid = null,
             this.loanDetails.totalEmiAndOverdueToBePaid = null,
-            this.loanDetails.totalEmiBalance=totalEmiAmount
+            this.loanDetails.totalEmiBalance = totalEmiAmount;
         }
         next(); // Call next to proceed with the save operation
     } catch (error) {
         next(error); // Pass any errors to the error handling middleware
     }
 });
+
 
 const UserModel = mongoose.model('Loan', userSchema);
 

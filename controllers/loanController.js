@@ -64,20 +64,32 @@ exports.updateLoanPayer = async (req, res) => {
         const loanNumber = req.params.loanNumber;
         const receiptNumber = previousReceiptNumber + 1;
         const { installmentNo, emiPaid, overdueAmount, overduePaid, paidDate } = req.body;
+
         // Find the user by loanNumber
         const user = await UserModel.findOne({ loanNumber });
+
+        // Check if user is found
+        if (!user) {
+            return res.status(404).json({ error: 'User not found with loan number provided' });
+        }
+
         // Find the installment object that matches the installment number
         const installmentObject = user.loanDetails.instalmentObject.find(installment => installment.installmentNo === installmentNo);
+
         // Check if installment is already paid
         if (installmentObject.isPaid) {
             return res.status(400).json({ error: 'Installment is already paid' });
         }
+
+        // If emiPaid is not equal to totalEmiAmountRoundoff, return an error
+        if (emiPaid !== installmentObject.totalEmiAmountRoundoff) {
+            return res.status(400).json({ error: 'emiPaid should be equal to totalEmiAmountRoundoff for this installment' });
+        }
+
         // Update installment object properties
         installmentObject.emiPaid = emiPaid;
-        if (emiPaid === installmentObject.totalEmiAmountRoundoff) {
-            // If emiPaid equals totalEmiAmountRoundoff, mark the installment as paid
-            installmentObject.isPaid = true;
-        }
+        installmentObject.isPaid = true; // Set isPaid to true since emiPaid equals totalEmiAmountRoundoff
+
         // Update overdueAmount and overduePaid
         installmentObject.overdueAmount = overdueAmount;
         installmentObject.overduePaid = overduePaid;
@@ -95,7 +107,18 @@ exports.updateLoanPayer = async (req, res) => {
         await updateLoanDetails(loanNumber);
         await updateOverdueInstallmentsForOne(loanNumber);
 
-        res.status(200).json({ message: 'Loan payer updated successfully' });
+        const installmentDetails = {
+            loanNumber: user.loanNumber,
+            installmentNo: installmentObject.installmentNo,
+            interestAmount: installmentObject.interestAmount,
+            principleAmountPerMonth: installmentObject.principleAmountPerMonth,
+            totalPrincipalAmount: user.loanDetails.totalPrincipalAmount,
+            overdueAmount: installmentObject.overdueAmount,
+            overduePaid: installmentObject.overduePaid,
+            overDueBalance: installmentObject.overDueBalance
+        };
+
+        res.status(200).json({ message: 'Loan payer updated successfully', installmentDetails });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
