@@ -43,7 +43,7 @@ exports.signIn = async (req, res) => {
       const companyName = user.companyName;
       // Connect to the new database specified by the user's DB
       await mongoose.connect(`mongodb+srv://logeshpriyanga:logesh98@cluster0.i7qbne1.mongodb.net/${user.DB}`);
-
+      console.log(token)
       console.log(`Connected to ${user.DB} database`);
 
       res.status(200).json({ message: "Sign-in successful", token, companyName });

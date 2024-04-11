@@ -5,23 +5,25 @@ const {updateOverdueInstallments} = require('../customFunctions/overDueCalculato
 
 
 exports.createUser = async (req, res) => {
-  try {
-        
-      const lastUser = await UserModel.findOne({}, {}, { sort: { 'loanNumber': -1 } });
-      let lastLoanNumber = 0;
-      if (lastUser && !isNaN(lastUser.loanNumber)) {
-          lastLoanNumber = lastUser.loanNumber;
-      }
-      const newLoanNumber = lastLoanNumber + 1;
+    try {
+        const lastUser = await UserModel.findOne({}, {}, { sort: { 'loanNumber': -1 } });
+        let lastLoanNumber = 0;
+        if (lastUser && !isNaN(lastUser.loanNumber)) {
+            lastLoanNumber = lastUser.loanNumber;
+        }
+        const newLoanNumber = lastLoanNumber + 1;
 
-      // Directly pass req.body to the UserModel constructor
-      const user = new UserModel({ loanNumber: newLoanNumber, ...req.body });
-      await user.save();
-      await updateOverdueInstallments();
-      res.status(201).json(user);
-  } catch (err) {
-      res.status(422).json({ status:'error', message: 'All feilds required' + err });
-  }
+        // Directly pass req.body to the UserModel constructor
+        const user = new UserModel({ loanNumber: newLoanNumber, ...req.body });
+        await user.save();
+        
+        // Call updateOverdueInstallmentsForOne with the new loan number
+        await updateOverdueInstallmentsForOne(newLoanNumber);
+
+        res.status(201).json(user);
+    } catch (err) {
+        res.status(422).json({ status: 'error', message: 'All fields required' + err });
+    }
 };
 
 exports.getUsers = async(req, res)=>{
