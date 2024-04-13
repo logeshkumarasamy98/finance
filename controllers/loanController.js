@@ -1,8 +1,7 @@
 const UserModel = require('../model/loanModel');
 const {updateOverdueInstallmentsForOne, updateLoanDetails, getLastReceiptNumber} = require('../customFunctions/loanFunctions')
 const {updateOverdueInstallments} = require('../customFunctions/overDueCalculator')
-
-
+const ledgerModel = require('./../model/ledgerModel');
 
 exports.createUser = async (req, res) => {
     try {
@@ -13,18 +12,68 @@ exports.createUser = async (req, res) => {
         }
         const newLoanNumber = lastLoanNumber + 1;
 
+        const lastDebitUser = await UserModel.findOne({}, {}, { sort: { 'debitReceiptNumber': -1 } });
+        let lastReceiptNumber = 0;
+        if (lastDebitUser && lastDebitUser.debitReceiptNumber) {
+            const lastReceiptNumberMatch = lastDebitUser.debitReceiptNumber.match(/\d+$/);
+            if (lastReceiptNumberMatch) {
+                lastReceiptNumber = parseInt(lastReceiptNumberMatch[0]);
+            }
+        }
+        const newReceiptNumber = `D-${lastReceiptNumber + 1}`;
+
         // Directly pass req.body to the UserModel constructor
-        const user = new UserModel({ loanNumber: newLoanNumber, ...req.body });
+        const user = new UserModel({ loanNumber: newLoanNumber, debitReceiptNumber: newReceiptNumber, ...req.body });
         await user.save();
         
         // Call updateOverdueInstallmentsForOne with the new loan number
         await updateOverdueInstallmentsForOne(newLoanNumber);
 
-        res.status(201).json(user);
+        // Creating ledger entry
+        const ledgerEntry = new ledgerModel({
+            isLoanDebit: true,
+            loanNumber: newLoanNumber,
+            receiptNumber: newReceiptNumber, // Including 'D-' prefix
+            remarks: req.body.details.loanPayerDetails.name,
+            total: req.body.loanDetails.totalPrincipalAmount,
+            creditOrDebit: 'Debit',
+            paymentMethod: req.body.paymentMethod
+        });
+        
+        // Save the newReceiptNumber to the receiptNumber field of ledgerEntry
+        ledgerEntry.receiptNumber = newReceiptNumber;
+        await ledgerEntry.save();
+
+        res.status(201).json({ status: 'success', message: 'User created successfully', user });
     } catch (err) {
-        res.status(422).json({ status: 'error', message: 'All fields required' + err });
+        res.status(422).json({ status: 'error', message: 'All fields required', error: err });
+        console.log(err)
     }
 };
+
+
+
+// exports.createUser = async (req, res) => {
+//     try {
+//         const lastUser = await UserModel.findOne({}, {}, { sort: { 'loanNumber': -1 } });
+//         let lastLoanNumber = 0;
+//         if (lastUser && !isNaN(lastUser.loanNumber)) {
+//             lastLoanNumber = lastUser.loanNumber;
+//         }
+//         const newLoanNumber = lastLoanNumber + 1;
+
+//         // Directly pass req.body to the UserModel constructor
+//         const user = new UserModel({ loanNumber: newLoanNumber, ...req.body });
+//         await user.save();
+        
+//         // Call updateOverdueInstallmentsForOne with the new loan number
+//         await updateOverdueInstallmentsForOne(newLoanNumber);
+
+//         res.status(201).json(user);
+//     } catch (err) {
+//         res.status(422).json({ status: 'error', message: 'All fields required' + err });
+//     }
+// };
 
 exports.getUsers = async(req, res)=>{
     try{

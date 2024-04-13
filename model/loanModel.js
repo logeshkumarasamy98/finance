@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
     
     loanNumber: { type: Number, unique: true },
+    debitReceiptNumber:{type:String, require:true},
 
     loanDetails: {
         isActive: { type: Boolean, required: true },
@@ -18,7 +19,7 @@ const userSchema = new mongoose.Schema({
             dueDate: { type: Date, required: true },
             paidDate: { type: Date },
             emiPaid: {type: Number, default:null},
-            receiptNumber: { type: Number },
+            receiptNumber: { type: String },
             principleAmountPerMonth: { type: Number },
             interestAmount: { type: Number },
             totalEmiAmount: { type: Number },
