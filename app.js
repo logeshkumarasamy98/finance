@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const loanController = require('./controllers/loanController');
+const ledgerController = require('./controllers/ledgerController');
 const authController = require('./controllers/authController');
 const filterDashboard = require('./controllers/filterDashoard');
 const { verifyToken } = require('./customFunctions/authFunction');
@@ -9,37 +10,38 @@ const ledgerModel = require('./model/ledgerModel');
 app.use(express.json());
 
 
+app.post(('/ledger/expense'), ledgerController.expense)
 
 
-app.post('/ledger/expense', async (req, res) => {
-    try {
-        const { paymentMethod, remarks, total, creditOrDebit } = req.body;
+// app.post('/ledger/expense', async (req, res) => {
+//     try {
+//         const { paymentMethod, remarks, total, creditOrDebit } = req.body;
 
-        // Update isExpense field based on conditions
-        let isExpense = false;
-        if (paymentMethod && remarks && total) {
-            isExpense = true;
-        }
+//         // Update isExpense field based on conditions
+//         let isExpense = false;
+//         if (paymentMethod && remarks && total) {
+//             isExpense = true;
+//         }
 
-        // Create a new ledger entry
-        const newEntry = new ledgerModel({
-            paymentMethod,
-            remarks,
-            total,
-            isExpense, // Assigning the updated value of isExpense
-            creditOrDebit // Assigning the creditOrDebit value
-            // Add other fields as needed
-        });
+//         // Create a new ledger entry
+//         const newEntry = new ledgerModel({
+//             paymentMethod,
+//             remarks,
+//             total,
+//             isExpense, // Assigning the updated value of isExpense
+//             creditOrDebit // Assigning the creditOrDebit value
+//             // Add other fields as needed
+//         });
 
-        // Save the new entry to the database
-        await newEntry.save();
+//         // Save the new entry to the database
+//         await newEntry.save();
 
-        res.status(200).json({ success: true, message: 'Ledger entry created successfully.' });
-    } catch (error) {
-        console.error('Error creating ledger entry:', error);
-        res.status(500).json({ success: false, message: 'Internal server error.' });
-    }
-});
+//         res.status(200).json({ success: true, message: 'Ledger entry created successfully.' });
+//     } catch (error) {
+//         console.error('Error creating ledger entry:', error);
+//         res.status(500).json({ success: false, message: 'Internal server error.' });
+//     }
+// });
 
 
 app.post('/ledger/investment', async (req, res) => {
