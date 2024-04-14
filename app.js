@@ -5,14 +5,14 @@ const ledgerController = require('./controllers/ledgerController');
 const authController = require('./controllers/authController');
 const filterDashboard = require('./controllers/filterDashoard');
 const { verifyToken } = require('./customFunctions/authFunction');
+const ledgerModel = require('./model/ledgerModel')
 
 app.use(express.json()); 
 
 
-app.post(('/ledger/expense'), ledgerController.expense)
 
-app.post(('/ledger/investment'), ledgerController.investment)
 
+// app.get(('/filter/ledgerDatas'), filterDashboard.ledgerDatas );
 // CORS setup
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3001'); // Replace with your client's origin
@@ -34,12 +34,17 @@ filterDashboardRouter.get('/activeLoanPayer', filterDashboard.activeLoanPayer);
 filterDashboardRouter.get('/vehicleTypePercentage', filterDashboard.vehicleTypePercentage);
 filterDashboardRouter.get('/LoanPayerDetails/:loanNumber', filterDashboard.LoanPayerDetails);
 filterDashboardRouter.get('/getPendingEmiDetails', filterDashboard.getPendingEmiDetails);
+filterDashboardRouter.get('/ledgerDatas', filterDashboard.ledgerDatas);
+
 
 
 // Define auth routes
 const authRouter = express.Router();
 authRouter.post('/signin', authController.signIn);
 authRouter.post('/signup', authController.signup);
+
+app.post(('/ledger/expense'), ledgerController.expense)
+app.post(('/ledger/investment'), ledgerController.investment)
 
 // Mount routers
 app.use('/api/loan', loanRouter);

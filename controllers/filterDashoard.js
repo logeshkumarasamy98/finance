@@ -1,3 +1,4 @@
+const ledgerModel = require('../model/ledgerModel');
 const loanModel = require('../model/loanModel');
 
 exports.activeLoanPayer = async (req, res) => {
@@ -239,3 +240,50 @@ exports.getPendingEmiDetails = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+exports.ledgerDatas = (req, res) => {
+    // Extract query parameters from the request
+    const params = req.query;
+
+    // Function to construct filter options dynamically based on provided parameters
+    const constructFilterOptions = (params) => {
+        const filterOptions = {};
+        
+        // Check if entryDate filter is provided in params
+        if (params.startDate && params.endDate) {
+            filterOptions.entryDate = {
+                $gte: new Date(params.startDate), 
+                $lte: new Date(params.endDate)
+            };
+        }
+
+        // Check if other boolean fields are provided in params
+        if (params.isExpense !== undefined) {
+            filterOptions.isExpense = params.isExpense;
+        }
+        if (params.isInvestment !== undefined) {
+            filterOptions.isInvestment = params.isInvestment;
+        }
+        if (params.isLoanDebit !== undefined) {
+            filterOptions.isLoanDebit = params.isLoanDebit;
+        }
+        if (params.isLoanCredit !== undefined) {
+            filterOptions.isLoanCredit = params.isLoanCredit;
+        }
+
+        return filterOptions;
+    };
+
+    // Construct filter options based on params
+    const filterOptions = constructFilterOptions(params);
+
+    // Perform the query using the constructed filter options
+    ledgerModel.find(filterOptions)
+        .then(results => {
+            res.json(results);
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            res.status(500).send('Internal Server Error');
+        });
+}
