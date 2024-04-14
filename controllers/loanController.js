@@ -288,6 +288,8 @@ exports.updateLoanPayer = async (req, res) => {
         await user.save();
         await updateLoanDetails(req.params.loanNumber);
         await updateOverdueInstallmentsForOne(req.params.loanNumber);
+        // Get user's name, address, and mobile number from loanPayerDetails
+        const { name, mobileNum1, address, pincode } = user.details.loanPayerDetails;
 
         // Get user's name from loanPayerDetails
         const remarks = user.details.loanPayerDetails.name;
@@ -317,7 +319,12 @@ exports.updateLoanPayer = async (req, res) => {
             overduePaid: installmentObject.overduePaid,
             overDueBalance: installmentObject.overDueBalance,
             receiptNumber: newReceiptNumber,
-            
+            paidDate: installmentObject.paidDate, // Add paid date
+            dueDate: installmentObject.dueDate, // Assuming due date is available in installmentObject
+            name, // Add loan payer's name
+            mobileNum1, // Add loan payer's mobile number
+            address, // Add loan payer's address
+            pincode // Add loan payer's pincode
         };
 
         res.status(200).json({ message: 'Loan payer updated successfully', installmentDetails });
