@@ -163,34 +163,17 @@ exports.vehicleTypePercentage = async (req, res) => {
     }
 };
 
-
-
 exports.getPendingEmiDetails = async (req, res) => {
     try {
         let startDate, endDate;
         
-        // Check if startDate and endDate are provided in the request query
-        if (req.query.startDate && req.query.endDate) {
-            // If provided, use them as the date range
-            startDate = new Date(req.query.startDate);
-            endDate = new Date(req.query.endDate);
-        } else {
-            // If not provided, calculate default startDate as today's date minus 7 days
-            startDate = new Date();
-            startDate.setDate(startDate.getDate() - 7);
-            
-            // Default endDate is today's date
-            endDate = new Date();
-        }
+        // Remove the logic for setting startDate and endDate
         
         const pendingEmiDetails = await loanModel.aggregate([
             {
                 $match: {
                     "loanDetails.emiPending": true,
-                    "loanDetails.instalmentObject.dueDate": {
-                        $gte: startDate,
-                        $lte: endDate
-                    }
+                    // Remove the date range condition
                 }
             },
             {
@@ -206,7 +189,7 @@ exports.getPendingEmiDetails = async (req, res) => {
                             cond: {
                                 $and: [
                                     { $eq: ["$$installment.isPaid", false] },
-                                    { $eq: ["$$installment.dueDate", startDate] }
+                                    // Remove the condition for dueDate
                                 ]
                             }
                         }
@@ -240,6 +223,83 @@ exports.getPendingEmiDetails = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+
+// exports.getPendingEmiDetails = async (req, res) => {
+//     try {
+//         let startDate, endDate;
+        
+//         // Check if startDate and endDate are provided in the request query
+//         if (req.query.startDate && req.query.endDate) {
+//             // If provided, use them as the date range
+//             startDate = new Date(req.query.startDate);
+//             endDate = new Date(req.query.endDate);
+//         } else {
+//             // If not provided, calculate default startDate as today's date minus 7 days
+//             startDate = new Date();
+//             startDate.setDate(startDate.getDate() - 7);
+            
+//             // Default endDate is today's date
+//             endDate = new Date();
+//         }
+        
+//         const pendingEmiDetails = await loanModel.aggregate([
+//             {
+//                 $match: {
+//                     "loanDetails.emiPending": true,
+//                     "loanDetails.instalmentObject.dueDate": {
+//                         $gte: startDate,
+//                         $lte: endDate
+//                     }
+//                 }
+//             },
+//             {
+//                 $project: {
+//                     loanNumber: 1,
+//                     loanPayerName: "$details.loanPayerDetails.name",
+//                     pendingEmiNum: "$loanDetails.pendingEmiNum",
+//                     emiPendingDate: "$loanDetails.emiPendingDate",
+//                     instalmentObject: {
+//                         $filter: {
+//                             input: "$loanDetails.instalmentObject",
+//                             as: "installment",
+//                             cond: {
+//                                 $and: [
+//                                     { $eq: ["$$installment.isPaid", false] },
+//                                     { $eq: ["$$installment.dueDate", startDate] }
+//                                 ]
+//                             }
+//                         }
+//                     },
+//                     totalEmiAmountRoundoff: {
+//                         $arrayElemAt: ["$loanDetails.instalmentObject.totalEmiAmountRoundoff", 0]
+//                     }
+//                 }
+//             },
+//             {
+//                 $addFields: {
+//                     instalmentObject: {
+//                         $cond: {
+//                             if: { $eq: [{ $size: "$instalmentObject" }, 0] },
+//                             then: "$$REMOVE",
+//                             else: "$instalmentObject"
+//                         }
+//                     }
+//                 }
+//             },
+//             {
+//                 $sort: {
+//                     "emiPendingDate": 1
+//                 }
+//             }
+//         ]);
+
+//         res.status(200).json({ pendingEmiDetails });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ error: 'Internal server error' });
+//     }
+// };
 
 exports.ledgerDatas = (req, res) => {
     // Extract query parameters from the request
