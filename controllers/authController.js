@@ -15,18 +15,15 @@ exports.signIn = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-      // Connect to the default database
       await mongoose.connect(process.env.USER_DB);
       console.log('DB connected... & user authenticated.');
 
-      // Find the user by email
       const user = await auth.findOne({ email });
 
       if (!user) {
           return res.status(404).json({ message: "User not found" });
       }
 
-      // Compare the hashed password with the plaintext password
       const isPasswordMatch = await bcrypt.compare(password, user.password);
 
       if (!isPasswordMatch) {
@@ -35,13 +32,12 @@ exports.signIn = async (req, res) => {
 
       console.log(`User found: ${user.email}`);
 
-      // Generate JWT token
+
       const token = jwt.sign({ email: user.email }, your_secret_key, { expiresIn: '2H' });
 
-      // Disconnect from the default database
       await mongoose.disconnect();
       const companyName = user.companyName;
-      // Connect to the new database specified by the user's DB
+
       await mongoose.connect(`mongodb+srv://logeshpriyanga:logesh98@cluster0.i7qbne1.mongodb.net/${user.DB}`);
       console.log(token)
       console.log(`Connected to ${user.DB} database`);
@@ -63,7 +59,6 @@ exports.signup = async (req, res) => {
     const { email, password, confirmPassword, DB, signUpKey, companyName } = req.body;
 
     try {
-        // Check if password and confirmPassword match
         if (password !== confirmPassword) {
             return res.status(400).json({ message: "Password and confirm password do not match" });
         }

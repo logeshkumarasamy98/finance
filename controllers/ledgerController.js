@@ -2,21 +2,20 @@ const ledgerModel = require('./../model/ledgerModel');
 
 exports.expense = async (req, res) => {
     try {
-        const { paymentMethod, remarks, total, creditOrDebit } = req.body;
+        const { paymentMethod, remarks, total } = req.body;
+        const entryDate = req.body.entryDate || new Date(); // Use provided entry date or current date if not provided
 
         // Update isExpense field based on conditions
-        let isExpense = false;
-        if (paymentMethod && remarks && total) {
-            isExpense = true;
-        }
+        const isExpense = true;
 
         // Create a new ledger entry
         const newEntry = new ledgerModel({
             paymentMethod,
             remarks,
             total,
-            isExpense, // Assigning the updated value of isExpense
-            creditOrDebit // Assigning the creditOrDebit value
+            isExpense,
+            creditOrDebit: 'Debit', // Always set creditOrDebit as "Debit"
+            entryDate,
             // Add other fields as needed
         });
 
@@ -30,15 +29,14 @@ exports.expense = async (req, res) => {
     }
 };
 
-exports.investment =  async (req, res) => {
+
+exports.investment = async (req, res) => {
     try {
         const { paymentMethod, remarks, total } = req.body;
+        const entryDate = req.body.entryDate || new Date(); // Use provided entry date or current date if not provided
 
-        // Update isInvestment field based on conditions
-        let isInvestment = false;
-        if (paymentMethod && remarks && total) {
-            isInvestment = true;
-        }
+        // Set isInvestment to true
+        const isInvestment = true;
 
         // Set creditOrDebit to "Credit"
         const creditOrDebit = "Credit";
@@ -48,8 +46,9 @@ exports.investment =  async (req, res) => {
             paymentMethod,
             remarks,
             total,
-            isInvestment, // Assigning the updated value of isInvestment
-            creditOrDebit // Assigning the creditOrDebit value
+            isInvestment,
+            creditOrDebit,
+            entryDate, // Adding the entryDate field
             // Add other fields as needed
         });
 

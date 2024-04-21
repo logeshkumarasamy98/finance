@@ -42,7 +42,7 @@ exports.LoanPayerDetails = async (req, res) => {
         const loanData = await loanModel.aggregate([
             {
                 $match: {
-                    loanNumber: loanNumber // Match loanNumber directly without using quotes
+                    loanNumber: loanNumber 
                 }
             },
             {
@@ -144,13 +144,12 @@ exports.vehicleTypePercentage = async (req, res) => {
         ]);
 
         if (vehicleTypeCounts.length === 0) {
-            return res.status(200).json({ vehicleTypePercentage: [] }); // Return empty array if no data
+            return res.status(200).json({ vehicleTypePercentage: [] }); 
         }
 
         const totalVehicles = vehicleTypeCounts[0].total;
         const types = vehicleTypeCounts[0].types;
 
-        // Calculate percentage for each type
         const vehicleTypePercentage = types.map(type => ({
             type: type.type,
             percentage: ((type.count / totalVehicles) * 100).toFixed(2) + '%'
@@ -165,48 +164,36 @@ exports.vehicleTypePercentage = async (req, res) => {
 
 exports.getPendingEmiDetails = async (req, res) => {
     try {
-        let startDate, endDate;
-        
-        // Remove the logic for setting startDate and endDate
         
         const pendingEmiDetails = await loanModel.aggregate([
             {
                 $match: {
                     "loanDetails.emiPending": true,
-                    // Remove the date range condition
+                }
+            },
+            {
+                $lookup: {
+                    from: "usermodels", 
+                    localField: "details.loanPayerDetails.name",
+                    foreignField: "details.loanPayerDetails.name",
+                    as: "user"
+                }
+            },
+            {
+                $match: {
+                    "loanDetails.instalmentObject.isPaid": false,
+                    "loanDetails.instalmentObject.dueDate": { $lte: new Date() }
                 }
             },
             {
                 $project: {
-                    loanNumber: 1,
+                    loanNumber: "$loanNumber",
                     loanPayerName: "$details.loanPayerDetails.name",
+                    phoneNumber1: { $arrayElemAt: ["$user.details.loanPayerDetails.mobileNum1", 0] }, 
                     pendingEmiNum: "$loanDetails.pendingEmiNum",
                     emiPendingDate: "$loanDetails.emiPendingDate",
-                    instalmentObject: {
-                        $filter: {
-                            input: "$loanDetails.instalmentObject",
-                            as: "installment",
-                            cond: {
-                                $and: [
-                                    { $eq: ["$$installment.isPaid", false] },
-                                    // Remove the condition for dueDate
-                                ]
-                            }
-                        }
-                    },
                     totalEmiAmountRoundoff: {
                         $arrayElemAt: ["$loanDetails.instalmentObject.totalEmiAmountRoundoff", 0]
-                    }
-                }
-            },
-            {
-                $addFields: {
-                    instalmentObject: {
-                        $cond: {
-                            if: { $eq: [{ $size: "$instalmentObject" }, 0] },
-                            then: "$$REMOVE",
-                            else: "$instalmentObject"
-                        }
                     }
                 }
             },
@@ -302,14 +289,13 @@ exports.getPendingEmiDetails = async (req, res) => {
 // };
 
 exports.ledgerDatas = (req, res) => {
-    // Extract query parameters from the request
+    
     const params = req.query;
 
-    // Function to construct filter options dynamically based on provided parameters
+   
     const constructFilterOptions = (params) => {
         const filterOptions = {};
         
-        // Check if entryDate filter is provided in params
         if (params.startDate && params.endDate) {
             filterOptions.entryDate = {
                 $gte: new Date(params.startDate), 
@@ -317,7 +303,6 @@ exports.ledgerDatas = (req, res) => {
             };
         }
 
-        // Check if other boolean fields are provided in params
         if (params.isExpense !== undefined) {
             filterOptions.isExpense = params.isExpense;
         }
@@ -334,10 +319,8 @@ exports.ledgerDatas = (req, res) => {
         return filterOptions;
     };
 
-    // Construct filter options based on params
     const filterOptions = constructFilterOptions(params);
 
-    // Perform the query using the constructed filter options
     ledgerModel.find(filterOptions)
         .then(results => {
             res.json(results);
