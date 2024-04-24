@@ -229,6 +229,111 @@ exports.getAllUsers = async (req, res) => {
 //         res.status(500).json({ error: 'Internal server error' });
 //     }
 // };
+// exports.updateLoanPayer = async (req, res) => {
+//     try {
+//         // Find the last receipt number starting with "C-" and get the number part
+//         const lastCReceipt = await ledgerModel.findOne({ receiptNumber: /^C-/ }, {}, { sort: { receiptNumber: -1 } });
+//         let lastCNumber = 0;
+//         if (lastCReceipt) {
+//             const lastCParts = lastCReceipt.receiptNumber.split('-');
+//             lastCNumber = parseInt(lastCParts[1]);
+//         }
+
+//         // Generate new receipt number in the format 'C-num'
+//         const newReceiptNumber = `C-${lastCNumber + 1}`;
+
+//         // Rest of your code...
+
+//         const { installmentNo, emiPaid, overdueAmount, overduePaid, paidDate } = req.body;
+
+//         // Find the user by loanNumber
+//         const user = await UserModel.findOne({ loanNumber: req.params.loanNumber });
+
+//         // Check if user is found
+//         if (!user) {
+//             return res.status(404).json({ error: 'User not found with loan number provided' });
+//         }
+
+//         // Find the installment object that matches the installment number
+//         const installmentObject = user.loanDetails.instalmentObject.find(installment => installment.installmentNo === installmentNo);
+
+//         // Check if installment is already paid
+//         if (installmentObject.isPaid) {
+//             return res.status(400).json({ error: 'Installment is already paid' });
+//         }
+
+//         // If emiPaid is not equal to totalEmiAmountRoundoff, return an error
+//         if (emiPaid !== installmentObject.totalEmiAmountRoundoff) {
+//             return res.status(400).json({ error: 'emiPaid should be equal to totalEmiAmountRoundoff for this installment' });
+//         }
+
+//         // Update installment object properties
+//         installmentObject.emiPaid = emiPaid;
+//         installmentObject.isPaid = true; // Set isPaid to true since emiPaid equals totalEmiAmountRoundoff
+
+//         // Update overdueAmount and overduePaid
+//         installmentObject.overdueAmount = overdueAmount;
+//         installmentObject.overduePaid = overduePaid;
+//         // Calculate overDueBalance
+//         const overDueBalance = overdueAmount - overduePaid;
+//         installmentObject.overDueBalance = overDueBalance;
+
+//         // Patch receipt number
+//         installmentObject.receiptNumber = newReceiptNumber;
+
+//         if (paidDate) {
+//             installmentObject.paidDate = paidDate;
+//         }
+
+//         await user.save();
+//         await updateLoanDetails(req.params.loanNumber);
+//         await updateOverdueInstallmentsForOne(req.params.loanNumber);
+//         // Get user's name, address, and mobile number from loanPayerDetails
+//         const { name, mobileNum1, address, pincode } = user.details.loanPayerDetails;
+
+//         // Get user's name from loanPayerDetails
+//         const remarks = user.details.loanPayerDetails.name;
+
+//         // Creating ledger entry
+//         const ledgerEntry = new ledgerModel({
+//             isLoanCredit: true, // Credit entry
+//             loanNumber: req.params.loanNumber,
+//             receiptNumber: newReceiptNumber,
+//             remarks,
+//             principle: installmentObject.principleAmountPerMonth,
+//             interest: installmentObject.interestAmount,
+//             overDue: overduePaid,
+//             total: installmentObject.totalEmiAmountRoundoff + overdueAmount,
+//             creditOrDebit: 'Credit',
+//             paymentMethod: req.body.paymentMethod
+//         });
+//         await ledgerEntry.save();
+
+//         const installmentDetails = {
+//             loanNumber: user.loanNumber,
+//             installmentNo: installmentObject.installmentNo,
+//             interestAmount: installmentObject.interestAmount,
+//             principleAmountPerMonth: installmentObject.principleAmountPerMonth,
+//             totalPrincipalAmount: user.loanDetails.totalPrincipalAmount,
+//             overdueAmount: installmentObject.overdueAmount,
+//             overduePaid: installmentObject.overduePaid,
+//             overDueBalance: installmentObject.overDueBalance,
+//             receiptNumber: newReceiptNumber,
+//             paidDate: installmentObject.paidDate, // Add paid date
+//             dueDate: installmentObject.dueDate, // Assuming due date is available in installmentObject
+//             name, // Add loan payer's name
+//             mobileNum1, // Add loan payer's mobile number
+//             address, // Add loan payer's address
+//             pincode // Add loan payer's pincode
+//         };
+
+//         res.status(200).json({ message: 'Loan payer updated successfully', installmentDetails });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ error: 'Internal server error' });
+//     }
+// };
+
 exports.updateLoanPayer = async (req, res) => {
     try {
         // Find the last receipt number starting with "C-" and get the number part
@@ -236,7 +341,14 @@ exports.updateLoanPayer = async (req, res) => {
         let lastCNumber = 0;
         if (lastCReceipt) {
             const lastCParts = lastCReceipt.receiptNumber.split('-');
-            lastCNumber = parseInt(lastCParts[1]);
+            lastCNumber = parseInt(lastCParts[1]); // Parse as integer
+        }
+        console.log("lastCReceipt:", lastCReceipt);
+        console.log("lastCNumber:", lastCNumber);
+
+        // Ensure lastCNumber is a number, if it's NaN (Not a Number), set it to 0
+        if (isNaN(lastCNumber)) {
+            lastCNumber = 0;
         }
 
         // Generate new receipt number in the format 'C-num'
