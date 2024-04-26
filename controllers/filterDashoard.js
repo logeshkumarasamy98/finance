@@ -354,7 +354,6 @@ exports.ledgerDatas = (req, res) => {
     
     const params = req.query;
 
-   
     const constructFilterOptions = (params) => {
         const filterOptions = {};
         
@@ -384,6 +383,7 @@ exports.ledgerDatas = (req, res) => {
     const filterOptions = constructFilterOptions(params);
 
     ledgerModel.find(filterOptions)
+        .sort({ entryDate: -1 }) // Sort by entryDate in descending order
         .then(results => {
             res.json(results);
         })
