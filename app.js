@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const loanController = require('./controllers/loanController');
 const ledgerController = require('./controllers/ledgerController');
@@ -6,6 +7,7 @@ const authController = require('./controllers/authController');
 const filterDashboard = require('./controllers/filterDashoard');
 const { verifyToken } = require('./customFunctions/authFunction');
 const ledgerModel = require('./model/ledgerModel')
+app.use(cors());
 
 app.use(express.json()); 
 
