@@ -11,6 +11,7 @@ const ledgerSchema =  new mongoose.Schema({
     entryDate: {type:Date, default: Date.now},
     loanNumber:{type:Number, default: null},
     receiptNumber:{type:String, default: null},
+    receiptNumberHid:{type:Number, default: 0},
     principle:{type:Number, default: null},
     intrest:{type:Number, default: null},
     overDue:{type:Number, default: null},

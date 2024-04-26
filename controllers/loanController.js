@@ -1,5 +1,5 @@
 const UserModel = require('../model/loanModel');
-const {updateOverdueInstallmentsForOne, updateLoanDetails, getLastReceiptNumber} = require('../customFunctions/loanFunctions')
+const {updateOverdueInstallmentsForOne, updateLoanDetails, getLastReceiptNumber, updateLoanStatus} = require('../customFunctions/loanFunctions')
 const {updateOverdueInstallments} = require('../customFunctions/overDueCalculator')
 const ledgerModel = require('./../model/ledgerModel');
 
@@ -104,31 +104,6 @@ exports.createUser = async (req, res) => {
     }
 };
 
-
-
-
-// exports.createUser = async (req, res) => {
-//     try {
-//         const lastUser = await UserModel.findOne({}, {}, { sort: { 'loanNumber': -1 } });
-//         let lastLoanNumber = 0;
-//         if (lastUser && !isNaN(lastUser.loanNumber)) {
-//             lastLoanNumber = lastUser.loanNumber;
-//         }
-//         const newLoanNumber = lastLoanNumber + 1;
-
-//         // Directly pass req.body to the UserModel constructor
-//         const user = new UserModel({ loanNumber: newLoanNumber, ...req.body });
-//         await user.save();
-        
-//         // Call updateOverdueInstallmentsForOne with the new loan number
-//         await updateOverdueInstallmentsForOne(newLoanNumber);
-
-//         res.status(201).json(user);
-//     } catch (err) {
-//         res.status(422).json({ status: 'error', message: 'All fields required' + err });
-//     }
-// };
-
 exports.getUsers = async(req, res)=>{
     try{
       const loanNumber = req.params.loanNumber;
@@ -165,85 +140,6 @@ exports.getAllUsers = async (req, res) => {
 
 // exports.updateLoanPayer = async (req, res) => {
 //     try {
-//         const previousReceiptNumber = await getLastReceiptNumber();
-//         const loanNumber = req.params.loanNumber;
-//         const receiptNumber = previousReceiptNumber + 1;
-//         const { installmentNo, emiPaid, overdueAmount, overduePaid, paidDate } = req.body;
-
-//         // Find the user by loanNumber
-//         const user = await UserModel.findOne({ loanNumber });
-
-//         // Check if user is found
-//         if (!user) {
-//             return res.status(404).json({ error: 'User not found with loan number provided' });
-//         }
-
-//         // Find the installment object that matches the installment number
-//         const installmentObject = user.loanDetails.instalmentObject.find(installment => installment.installmentNo === installmentNo);
-
-//         // Check if installment is already paid
-//         if (installmentObject.isPaid) {
-//             return res.status(400).json({ error: 'Installment is already paid' });
-//         }
-
-//         // If emiPaid is not equal to totalEmiAmountRoundoff, return an error
-//         if (emiPaid !== installmentObject.totalEmiAmountRoundoff) {
-//             return res.status(400).json({ error: 'emiPaid should be equal to totalEmiAmountRoundoff for this installment' });
-//         }
-
-//         // Update installment object properties
-//         installmentObject.emiPaid = emiPaid;
-//         installmentObject.isPaid = true; // Set isPaid to true since emiPaid equals totalEmiAmountRoundoff
-
-//         // Update overdueAmount and overduePaid
-//         installmentObject.overdueAmount = overdueAmount;
-//         installmentObject.overduePaid = overduePaid;
-//         // Calculate overDueBalance
-//         const overDueBalance = overdueAmount - overduePaid;
-//         installmentObject.overDueBalance = overDueBalance;
-//         // Patch receipt number
-//         installmentObject.receiptNumber = receiptNumber;
-
-//         if (paidDate) {
-//             installmentObject.paidDate = paidDate;
-//         }
-
-//         await user.save();
-//         await updateLoanDetails(loanNumber);
-//         await updateOverdueInstallmentsForOne(loanNumber);
-
-//         const installmentDetails = {
-//             loanNumber: user.loanNumber,
-//             installmentNo: installmentObject.installmentNo,
-//             interestAmount: installmentObject.interestAmount,
-//             principleAmountPerMonth: installmentObject.principleAmountPerMonth,
-//             totalPrincipalAmount: user.loanDetails.totalPrincipalAmount,
-//             overdueAmount: installmentObject.overdueAmount,
-//             overduePaid: installmentObject.overduePaid,
-//             overDueBalance: installmentObject.overDueBalance
-//         };
-
-//         res.status(200).json({ message: 'Loan payer updated successfully', installmentDetails });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ error: 'Internal server error' });
-//     }
-// };
-// exports.updateLoanPayer = async (req, res) => {
-//     try {
-//         // Find the last receipt number starting with "C-" and get the number part
-//         const lastCReceipt = await ledgerModel.findOne({ receiptNumber: /^C-/ }, {}, { sort: { receiptNumber: -1 } });
-//         let lastCNumber = 0;
-//         if (lastCReceipt) {
-//             const lastCParts = lastCReceipt.receiptNumber.split('-');
-//             lastCNumber = parseInt(lastCParts[1]);
-//         }
-
-//         // Generate new receipt number in the format 'C-num'
-//         const newReceiptNumber = `C-${lastCNumber + 1}`;
-
-//         // Rest of your code...
-
 //         const { installmentNo, emiPaid, overdueAmount, overduePaid, paidDate } = req.body;
 
 //         // Find the user by loanNumber
@@ -254,6 +150,16 @@ exports.getAllUsers = async (req, res) => {
 //             return res.status(404).json({ error: 'User not found with loan number provided' });
 //         }
 
+//         // Find the highest receipt number across all loan numbers
+//         const highestReceiptEntry = await ledgerModel.findOne({})
+//             .sort({ receiptNumberHid: -1 }); // Sort by receiptNumberHid
+
+//             let newReceiptNumberHid = 1; // Default value if no entries found
+//             if (highestReceiptEntry && highestReceiptEntry.receiptNumberHid !== null) {
+//                 // If entry exists and receiptNumberHid is not null, increment the last used receipt number hid by one
+//                 newReceiptNumberHid = highestReceiptEntry.receiptNumberHid + 1;
+//             }
+
 //         // Find the installment object that matches the installment number
 //         const installmentObject = user.loanDetails.instalmentObject.find(installment => installment.installmentNo === installmentNo);
 
@@ -279,7 +185,7 @@ exports.getAllUsers = async (req, res) => {
 //         installmentObject.overDueBalance = overDueBalance;
 
 //         // Patch receipt number
-//         installmentObject.receiptNumber = newReceiptNumber;
+//         const receiptNumber = `C-${newReceiptNumberHid}`;
 
 //         if (paidDate) {
 //             installmentObject.paidDate = paidDate;
@@ -289,6 +195,17 @@ exports.getAllUsers = async (req, res) => {
 //         await updateLoanDetails(req.params.loanNumber);
 //         await updateOverdueInstallmentsForOne(req.params.loanNumber);
 //         // Get user's name, address, and mobile number from loanPayerDetails
+
+//         // const isAllInstallmentsPaid = user.loanDetails.instalmentObject.every(installment => installment.isPaid);
+//         // const isEmiBalanceZeroOrLess = user.loanDetails.totalEmiBalance <= 0;
+
+//         // if (isAllInstallmentsPaid && isEmiBalanceZeroOrLess) {
+//         //     // Update isActive status to false
+//         //     user.loanDetails.isActive = false;
+//         //     await user.save();
+//         // }
+
+
 //         const { name, mobileNum1, address, pincode } = user.details.loanPayerDetails;
 
 //         // Get user's name from loanPayerDetails
@@ -298,7 +215,8 @@ exports.getAllUsers = async (req, res) => {
 //         const ledgerEntry = new ledgerModel({
 //             isLoanCredit: true, // Credit entry
 //             loanNumber: req.params.loanNumber,
-//             receiptNumber: newReceiptNumber,
+//             receiptNumber, // Construct receiptNumber with "C-" prefix
+//             receiptNumberHid: newReceiptNumberHid, // Update receiptNumberHid
 //             remarks,
 //             principle: installmentObject.principleAmountPerMonth,
 //             interest: installmentObject.interestAmount,
@@ -318,7 +236,7 @@ exports.getAllUsers = async (req, res) => {
 //             overdueAmount: installmentObject.overdueAmount,
 //             overduePaid: installmentObject.overduePaid,
 //             overDueBalance: installmentObject.overDueBalance,
-//             receiptNumber: newReceiptNumber,
+//             receiptNumber, // Construct receiptNumber with "C-" prefix
 //             paidDate: installmentObject.paidDate, // Add paid date
 //             dueDate: installmentObject.dueDate, // Assuming due date is available in installmentObject
 //             name, // Add loan payer's name
@@ -334,28 +252,9 @@ exports.getAllUsers = async (req, res) => {
 //     }
 // };
 
+
 exports.updateLoanPayer = async (req, res) => {
     try {
-        // Find the last receipt number starting with "C-" and get the number part
-        const lastCReceipt = await ledgerModel.findOne({ receiptNumber: /^C-/ }, {}, { sort: { receiptNumber: -1 } });
-        let lastCNumber = 0;
-        if (lastCReceipt) {
-            const lastCParts = lastCReceipt.receiptNumber.split('-');
-            lastCNumber = parseInt(lastCParts[1]); // Parse as integer
-        }
-        console.log("lastCReceipt:", lastCReceipt);
-        console.log("lastCNumber:", lastCNumber);
-
-        // Ensure lastCNumber is a number, if it's NaN (Not a Number), set it to 0
-        if (isNaN(lastCNumber)) {
-            lastCNumber = 0;
-        }
-
-        // Generate new receipt number in the format 'C-num'
-        const newReceiptNumber = `C-${lastCNumber + 1}`;
-
-        // Rest of your code...
-
         const { installmentNo, emiPaid, overdueAmount, overduePaid, paidDate } = req.body;
 
         // Find the user by loanNumber
@@ -364,6 +263,16 @@ exports.updateLoanPayer = async (req, res) => {
         // Check if user is found
         if (!user) {
             return res.status(404).json({ error: 'User not found with loan number provided' });
+        }
+
+        // Find the highest receipt number across all loan numbers
+        const highestReceiptEntry = await ledgerModel.findOne({})
+            .sort({ receiptNumberHid: -1 }); // Sort by receiptNumberHid
+
+        let newReceiptNumberHid = 1; // Default value if no entries found
+        if (highestReceiptEntry) {
+            // If entry exists, increment the last used receipt number hid by one
+            newReceiptNumberHid = highestReceiptEntry.receiptNumberHid + 1;
         }
 
         // Find the installment object that matches the installment number
@@ -391,7 +300,8 @@ exports.updateLoanPayer = async (req, res) => {
         installmentObject.overDueBalance = overDueBalance;
 
         // Patch receipt number
-        installmentObject.receiptNumber = newReceiptNumber;
+        const receiptNumber = `C-${newReceiptNumberHid}`;
+        installmentObject.receiptNumber=receiptNumber
 
         if (paidDate) {
             installmentObject.paidDate = paidDate;
@@ -400,6 +310,7 @@ exports.updateLoanPayer = async (req, res) => {
         await user.save();
         await updateLoanDetails(req.params.loanNumber);
         await updateOverdueInstallmentsForOne(req.params.loanNumber);
+        await updateLoanStatus(req.params.loanNumber)
         // Get user's name, address, and mobile number from loanPayerDetails
         const { name, mobileNum1, address, pincode } = user.details.loanPayerDetails;
 
@@ -410,7 +321,8 @@ exports.updateLoanPayer = async (req, res) => {
         const ledgerEntry = new ledgerModel({
             isLoanCredit: true, // Credit entry
             loanNumber: req.params.loanNumber,
-            receiptNumber: newReceiptNumber,
+            receiptNumber, // Construct receiptNumber with "C-" prefix
+            receiptNumberHid: newReceiptNumberHid, // Update receiptNumberHid
             remarks,
             principle: installmentObject.principleAmountPerMonth,
             interest: installmentObject.interestAmount,
@@ -430,7 +342,7 @@ exports.updateLoanPayer = async (req, res) => {
             overdueAmount: installmentObject.overdueAmount,
             overduePaid: installmentObject.overduePaid,
             overDueBalance: installmentObject.overDueBalance,
-            receiptNumber: newReceiptNumber,
+            receiptNumber, // Construct receiptNumber with "C-" prefix
             paidDate: installmentObject.paidDate, // Add paid date
             dueDate: installmentObject.dueDate, // Assuming due date is available in installmentObject
             name, // Add loan payer's name
@@ -445,3 +357,5 @@ exports.updateLoanPayer = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+

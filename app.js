@@ -24,8 +24,8 @@ app.use((req, res, next) => {
 // Define loan routes
 const loanRouter = express.Router();
 loanRouter.post('/', loanController.createUser);
-loanRouter.get('/:loanNumber', verifyToken, loanController.getUsers);
-loanRouter.get('/', verifyToken, loanController.getAllUsers);
+loanRouter.get('/:loanNumber', loanController.getUsers);
+loanRouter.get('/',  loanController.getAllUsers);
 loanRouter.patch('/patch/:loanNumber', loanController.updateLoanPayer);
 
 // Define filter dashboard routes

@@ -129,6 +129,28 @@ async function updateLoanDetails(loanNumber) {
     }
 }
 
+async function updateLoanStatus(loanNumber) {
+  try {
+      const loan = await UserModel.findOne({ loanNumber });
 
+      if (!loan) {
+          throw new Error('Loan not found');
+      }
+
+      // Check if all installments are paid and totalEmiBalance is <= 0
+      const allPaid = loan.loanDetails.instalmentObject.every(installment => installment.isPaid);
+      const balance = loan.loanDetails.totalEmiBalance;
+
+      if (allPaid && balance <= 0) {
+          // Update isActive to false
+          await UserModel.updateOne({ loanNumber }, { 'loanDetails.isActive': false });
+          console.log(`Loan ${loanNumber} status updated successfully.`);
+      } else {
+          console.log(`Loan ${loanNumber} does not meet the conditions for status update.`);
+      }
+  } catch (error) {
+      console.error('Error updating loan status:', error);
+  }
+}
   
-module.exports ={updateOverdueInstallmentsForOne, updateLoanDetails, getLastReceiptNumber}
+module.exports ={updateOverdueInstallmentsForOne, updateLoanDetails, getLastReceiptNumber, updateLoanStatus}

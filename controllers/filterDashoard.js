@@ -35,6 +35,68 @@ exports.activeLoanPayer = async (req, res) => {
         });
     }
 }
+exports.activeLoanPayer = async (req, res) => {
+    try {
+        const users = await loanModel.aggregate([
+            {
+                $match: {
+                    "loanDetails.isActive": true,
+                }
+            },
+            {
+                $project: {
+                    "loanNumber": 1,
+                    "loanPayerName": "$details.loanPayerDetails.name",
+                    "loanBalance": "$loanDetails.totalEmiBalance", // Assuming this field exists
+                    "mobileNum1": "$details.loanPayerDetails.mobileNum1",
+                    "vehicalNum": "$details.vehicle.vehicleNumber",
+                    "vehicalType": "$details.vehicle.type",
+                    "vehicalModel": "$details.vehicle.model"
+                }
+            }
+        ]);
+        res.status(200).json({
+            status: 'Success',
+            length: users.length,
+            data: users
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            status: 'error',
+            message: 'An error occurred while fetching active loan payer details.'
+        });
+    }
+}
+
+// exports.activeLoanPayer = async (req, res) => {
+//     try {
+//         const count = await loanModel.aggregate([
+//             {
+//                 $match: {
+//                     'loanDetails.isActive': true // Filter documents where isActive is true
+//                 }
+//             },
+//             {
+//                 $group: {
+//                     _id: null,
+//                     count: { $sum: 1 } // Count the documents
+//                 }
+//             }
+//         ]);
+
+//         // Extract count from the result
+//         const activeLoanPayersCount = count.length > 0 ? count[0].count : 0;
+
+//         // Send response with the count
+//         res.status(200).json({ activeLoanPayersCount });
+//     } catch (error) {
+//         // Handle error
+//         console.error(error);
+//         res.status(500).json({ error: 'Internal server error' });
+//     }
+// };
 
 exports.LoanPayerDetails = async (req, res) => {
     const loanNumber = parseInt(req.params.loanNumber);
