@@ -123,13 +123,14 @@ userSchema.pre('save', async function(next) {
             const totalEmiAmount = this.loanDetails.instalmentObject.reduce((total, installment) => {
                 return total + installment.totalEmiAmount;
             }, 0);
+            const roundedTotalEmiBalance = Math.round(totalEmiAmount);
 
             // Set totalEmiAmount in the loanDetails
             this.loanDetails.totalEmiAlreadyPaid = 0,
             this.loanDetails.totalEmiAmount = totalEmiAmount;
             this.loanDetails.totalOverdueAmountToBePaid = null,
             this.loanDetails.totalEmiAndOverdueToBePaid = null,
-            this.loanDetails.totalEmiBalance = totalEmiAmount;
+            this.loanDetails.totalEmiBalance = roundedTotalEmiBalance;
         }
         next(); // Call next to proceed with the save operation
     } catch (error) {
