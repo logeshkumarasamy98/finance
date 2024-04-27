@@ -60,6 +60,124 @@ exports.activeLoanPayerLength = async (req, res) => {
 }
 
 
+exports.seizedLoanPayer = async (req, res) => {
+    try {
+        const users = await loanModel.aggregate([
+            {
+                $match: {
+                    "loanDetails.isSeized": true,
+                }
+            },
+            {
+                $project: {
+                    "loanNumber": 1,
+                    "loanPayerName": "$details.loanPayerDetails.name",
+                    "loanBalance": "$loanDetails.totalEmiBalance", // Assuming this field exists
+                    "mobileNum1": "$details.loanPayerDetails.mobileNum1",
+                    "vehicalNum": "$details.vehicle.vehicleNumber",
+                    "vehicalType": "$details.vehicle.type",
+                    "vehicalModel": "$details.vehicle.model"
+                }
+            }
+        ]);
+        res.status(200).json({
+            status: 'Success',
+            length: users.length,
+            data: users
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            status: 'error',
+            message: 'An error occurred while fetching active loan payer details.'
+        });
+    }
+}
+
+exports.seizedLoanPayerLength = async (req, res) => {
+    try {
+        const users = await loanModel.aggregate([
+            {
+                $match: {
+                    "loanDetails.isSeized": true,
+                }
+            },
+        ]);
+        res.status(200).json({
+            status: 'Success',
+            length: users.length
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            status: 'error',
+            message: 'An error occurred while fetching active loan payer details.'
+        });
+    }
+}
+
+
+
+exports.closedLoanPayer = async (req, res) => {
+    try {
+        const users = await loanModel.aggregate([
+            {
+                $match: {
+                    "loanDetails.isActive": false,
+                }
+            },
+            {
+                $project: {
+                    "loanNumber": 1,
+                    "loanPayerName": "$details.loanPayerDetails.name",
+                    "loanBalance": "$loanDetails.totalEmiBalance", // Assuming this field exists
+                    "mobileNum1": "$details.loanPayerDetails.mobileNum1",
+                    "vehicalNum": "$details.vehicle.vehicleNumber",
+                    "vehicalType": "$details.vehicle.type",
+                    "vehicalModel": "$details.vehicle.model"
+                }
+            }
+        ]);
+        res.status(200).json({
+            status: 'Success',
+            length: users.length,
+            data: users
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            status: 'error',
+            message: 'An error occurred while fetching active loan payer details.'
+        });
+    }
+}
+
+exports.closedLoanPayerLength = async (req, res) => {
+    try {
+        const users = await loanModel.aggregate([
+            {
+                $match: {
+                    "loanDetails.isActive": false,
+                }
+            },
+        ]);
+        res.status(200).json({
+            status: 'Success',
+            length: users.length
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            status: 'error',
+            message: 'An error occurred while fetching active loan payer details.'
+        });
+    }
+}
+
 exports.LoanPayerDetails = async (req, res) => {
     const loanNumber = parseInt(req.params.loanNumber);
     try {

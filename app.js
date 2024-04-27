@@ -40,6 +40,10 @@ filterDashboardRouter.get('/ledgerDatas', filterDashboard.ledgerDatas);
 filterDashboardRouter.get('/getOverDueUsers', filterDashboard.getOverDueUsers);
 filterDashboardRouter.get('/getOverDueLength', filterDashboard.getOverDueLength);
 filterDashboardRouter.get('/activeLoanPayerLength', filterDashboard.activeLoanPayerLength);
+filterDashboardRouter.get('/closedLoanPayer', filterDashboard.closedLoanPayer);
+filterDashboardRouter.get('/closedLoanPayerLength', filterDashboard.closedLoanPayerLength);
+filterDashboardRouter.get('/seizedLoanPayerLength', filterDashboard.seizedLoanPayerLength);
+filterDashboardRouter.get('/seizedLoanPayer', filterDashboard.seizedLoanPayer);
 
 
 

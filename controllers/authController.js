@@ -42,7 +42,8 @@ exports.signIn = async (req, res) => {
       console.log(token)
       console.log(`Connected to ${user.DB} database`);
 
-      res.status(200).json({ message: "Sign-in successful", token, companyName });
+      res.cookie('token', token, {httpOnly: true});
+      res.status(200).json({ message: "Sign-in successful", companyName });
 
       // Perform any additional operations after successful login
       await updateOverdueInstallments();
