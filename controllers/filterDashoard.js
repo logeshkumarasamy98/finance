@@ -213,29 +213,17 @@ exports.LoanPayerDetails = async (req, res) => {
     }
   };
 
-exports.pendingEmiPayer = async(req, res)=>{
+exports.pendingEmiPayerLength = async(req, res)=>{
     try{
         const users = await loanModel.aggregate([
            { $match: {
                 "loanDetails.emiPending":true,
             }},
-            {
-                $project:{
-                    "loanNumber": "$loanNumber",
-                    "loanPayerName": "$details.loanPayerDetails.name",
-                    "loanBalance" : "$loanDetails.totalEmiAmount",
-                    "mobileNum1": "$details.loanPayerDetails.mobileNum1",
-                    "vehicalNum" : "$details.vehicle.vehicleNumber",
-                    "vehicalType" : "$details.vehicle.type",
-                    "vehicalModel": "$details.vehicle.model"
-                }
-            }
         ])
         res.status(200).json({
             status:'Success',
             length:users.length,
-            data: users
-        })
+                })
     }catch(err){
         console.error(err);
         res.status(500).json({

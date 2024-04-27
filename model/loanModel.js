@@ -37,6 +37,17 @@ const userSchema = new mongoose.Schema({
         pendingEmiNum:{type: Number, default:null},
         emiPendingDate:{type : Date, default:null},
 
+        preCloser: {
+            hasPreCloser: { type: Boolean, default: false },
+            isPrecloserBelow3Months: { type: Boolean, default: false },
+            isPrecloserAbove3Months: { type: Boolean, default: false },
+            preCloserDate: { type: Date, default:null },
+            preCloserTotalAmount: { type: Number, default:null },
+            preCloserPrincipleAmount: { type: Number,  default:null },
+            preCloserInterestAmount: { type: Number, default:null },
+            preCloserOverDue: { type: Number, default:null }
+        }
+
     }, 
 
     details: {
