@@ -243,10 +243,11 @@ exports.ledgerDatas = (req, res) => {
     const constructFilterOptions = (params) => {
         const filterOptions = {};
         
-        if (params.startDate && params.endDate) {
+        if (params.startDate) {
+            const startDate = new Date(params.startDate);
             filterOptions.entryDate = {
-                $gte: new Date(params.startDate), 
-                $lte: new Date(params.endDate)
+                $gte: startDate,
+                $lte: startDate
             };
         }
 
@@ -278,6 +279,7 @@ exports.ledgerDatas = (req, res) => {
             res.status(500).send('Internal Server Error');
         });
 }
+
 
 
 exports.getOverDueUsers = async (req, res) => {
