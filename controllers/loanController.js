@@ -93,8 +93,6 @@ exports.getAllUsers = async (req, res) => {
     }
 };
 
-
-
 exports.updateLoanPayer = async (req, res) => {
     const session = await UserModel.startSession();
     session.startTransaction();
@@ -185,13 +183,13 @@ exports.updateLoanPayer = async (req, res) => {
             overdueAmount: installmentObject.overdueAmount,
             overduePaid: installmentObject.overduePaid,
             overDueBalance: installmentObject.overDueBalance,
-            receiptNumber, // Construct receiptNumber with "C-" prefix
-            paidDate: installmentObject.paidDate, // Add paid date
-            dueDate: installmentObject.dueDate, // Assuming due date is available in installmentObject
-            name, // Add loan payer's name
-            mobileNum1, // Add loan payer's mobile number
-            address, // Add loan payer's address
-            pincode // Add loan payer's pincode
+            receiptNumber,
+            paidDate: installmentObject.paidDate,
+            dueDate: installmentObject.dueDate, 
+            name, 
+            mobileNum1, 
+            address,
+            pincode 
         };
 
         await session.commitTransaction();

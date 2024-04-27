@@ -11,40 +11,6 @@ exports.activeLoanPayer = async (req, res) => {
             },
             {
                 $project: {
-                    "loanNumber": "$loanNumber",
-                    "loanPayerName": "$details.loanPayerDetails.name",
-                    "loanBalance": "$loanDetails.totalEmiBalance", // Assuming this field exists
-                    "mobileNum1": "$details.loanPayerDetails.mobileNum1",
-                    "vehicalNum": "$details.vehicle.vehicleNumber",
-                    "vehicalType": "$details.vehicle.type",
-                    "vehicalModel": "$details.vehicle.model"
-                }
-            }
-        ]);
-        res.status(200).json({
-            status: 'Success',
-            length: users.length,
-            data: users
-        });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({
-            status: 'error',
-            message: 'An error occurred while fetching active loan payer details.'
-        });
-    }
-}
-exports.activeLoanPayer = async (req, res) => {
-    try {
-        const users = await loanModel.aggregate([
-            {
-                $match: {
-                    "loanDetails.isActive": true,
-                }
-            },
-            {
-                $project: {
                     "loanNumber": 1,
                     "loanPayerName": "$details.loanPayerDetails.name",
                     "loanBalance": "$loanDetails.totalEmiBalance", // Assuming this field exists
@@ -70,33 +36,29 @@ exports.activeLoanPayer = async (req, res) => {
     }
 }
 
-// exports.activeLoanPayer = async (req, res) => {
-//     try {
-//         const count = await loanModel.aggregate([
-//             {
-//                 $match: {
-//                     'loanDetails.isActive': true // Filter documents where isActive is true
-//                 }
-//             },
-//             {
-//                 $group: {
-//                     _id: null,
-//                     count: { $sum: 1 } // Count the documents
-//                 }
-//             }
-//         ]);
+exports.activeLoanPayerLength = async (req, res) => {
+    try {
+        const users = await loanModel.aggregate([
+            {
+                $match: {
+                    "loanDetails.isActive": true,
+                }
+            },
+        ]);
+        res.status(200).json({
+            status: 'Success',
+            length: users.length
+        });
 
-//         // Extract count from the result
-//         const activeLoanPayersCount = count.length > 0 ? count[0].count : 0;
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            status: 'error',
+            message: 'An error occurred while fetching active loan payer details.'
+        });
+    }
+}
 
-//         // Send response with the count
-//         res.status(200).json({ activeLoanPayersCount });
-//     } catch (error) {
-//         // Handle error
-//         console.error(error);
-//         res.status(500).json({ error: 'Internal server error' });
-//     }
-// };
 
 exports.LoanPayerDetails = async (req, res) => {
     const loanNumber = parseInt(req.params.loanNumber);
@@ -251,7 +213,7 @@ exports.getPendingEmiDetails = async (req, res) => {
                 $project: {
                     loanNumber: "$loanNumber",
                     loanPayerName: "$details.loanPayerDetails.name",
-                    phoneNumber1: { $arrayElemAt: ["$user.details.loanPayerDetails.mobileNum1", 0] }, 
+                    phoneNumber1: "$details.loanPayerDetails.mobileNum1", 
                     pendingEmiNum: "$loanDetails.pendingEmiNum",
                     emiPendingDate: "$loanDetails.emiPendingDate",
                     totalEmiAmountRoundoff: {
@@ -273,82 +235,6 @@ exports.getPendingEmiDetails = async (req, res) => {
     }
 };
 
-
-// exports.getPendingEmiDetails = async (req, res) => {
-//     try {
-//         let startDate, endDate;
-        
-//         // Check if startDate and endDate are provided in the request query
-//         if (req.query.startDate && req.query.endDate) {
-//             // If provided, use them as the date range
-//             startDate = new Date(req.query.startDate);
-//             endDate = new Date(req.query.endDate);
-//         } else {
-//             // If not provided, calculate default startDate as today's date minus 7 days
-//             startDate = new Date();
-//             startDate.setDate(startDate.getDate() - 7);
-            
-//             // Default endDate is today's date
-//             endDate = new Date();
-//         }
-        
-//         const pendingEmiDetails = await loanModel.aggregate([
-//             {
-//                 $match: {
-//                     "loanDetails.emiPending": true,
-//                     "loanDetails.instalmentObject.dueDate": {
-//                         $gte: startDate,
-//                         $lte: endDate
-//                     }
-//                 }
-//             },
-//             {
-//                 $project: {
-//                     loanNumber: 1,
-//                     loanPayerName: "$details.loanPayerDetails.name",
-//                     pendingEmiNum: "$loanDetails.pendingEmiNum",
-//                     emiPendingDate: "$loanDetails.emiPendingDate",
-//                     instalmentObject: {
-//                         $filter: {
-//                             input: "$loanDetails.instalmentObject",
-//                             as: "installment",
-//                             cond: {
-//                                 $and: [
-//                                     { $eq: ["$$installment.isPaid", false] },
-//                                     { $eq: ["$$installment.dueDate", startDate] }
-//                                 ]
-//                             }
-//                         }
-//                     },
-//                     totalEmiAmountRoundoff: {
-//                         $arrayElemAt: ["$loanDetails.instalmentObject.totalEmiAmountRoundoff", 0]
-//                     }
-//                 }
-//             },
-//             {
-//                 $addFields: {
-//                     instalmentObject: {
-//                         $cond: {
-//                             if: { $eq: [{ $size: "$instalmentObject" }, 0] },
-//                             then: "$$REMOVE",
-//                             else: "$instalmentObject"
-//                         }
-//                     }
-//                 }
-//             },
-//             {
-//                 $sort: {
-//                     "emiPendingDate": 1
-//                 }
-//             }
-//         ]);
-
-//         res.status(200).json({ pendingEmiDetails });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ error: 'Internal server error' });
-//     }
-// };
 
 exports.ledgerDatas = (req, res) => {
     
@@ -392,3 +278,55 @@ exports.ledgerDatas = (req, res) => {
             res.status(500).send('Internal Server Error');
         });
 }
+
+
+exports.getOverDueUsers = async (req, res) => {
+    try {
+        const pendingEmiDetails = await loanModel.aggregate([
+            {
+                $match: {
+                    "loanDetails.totalOverdueAmountToBePaid": { $gt: 0 }
+                }
+            },
+            {
+                $project: {
+                    loanNumber: "$loanNumber",
+                    loanPayerName: "$details.loanPayerDetails.name",
+                    loanBalance: "$loanDetails.totalEmiAmount",
+                    mobileNum1: "$details.loanPayerDetails.mobileNum1",
+                    vehicalNum: "$details.vehicle.vehicleNumber",
+                    vehicalType: "$details.vehicle.type",
+                    vehicalModel: "$details.vehicle.model"
+                }
+            }
+        ]);
+
+        const pendingEmiDetailsLength = pendingEmiDetails.length;
+
+        res.status(200).json({ pendingEmiDetails, length: pendingEmiDetailsLength });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+exports.getOverDueLength = async (req, res) => {
+    try {
+        const pendingEmiDetails = await loanModel.aggregate([
+            {
+                $match: {
+                    "loanDetails.totalOverdueAmountToBePaid": { $gt: 0 }
+                }
+            },
+        ]);
+
+        const pendingEmiDetailsLength = pendingEmiDetails.length;
+
+        res.status(200).json({ 
+            status:'Success',
+            length: pendingEmiDetailsLength });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};

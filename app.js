@@ -37,6 +37,9 @@ filterDashboardRouter.get('/vehicleTypePercentage', filterDashboard.vehicleTypeP
 filterDashboardRouter.get('/LoanPayerDetails/:loanNumber', filterDashboard.LoanPayerDetails);
 filterDashboardRouter.get('/getPendingEmiDetails', filterDashboard.getPendingEmiDetails);
 filterDashboardRouter.get('/ledgerDatas', filterDashboard.ledgerDatas);
+filterDashboardRouter.get('/getOverDueUsers', filterDashboard.getOverDueUsers);
+filterDashboardRouter.get('/getOverDueLength', filterDashboard.getOverDueLength);
+filterDashboardRouter.get('/activeLoanPayerLength', filterDashboard.activeLoanPayerLength);
 
 
 
