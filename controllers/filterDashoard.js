@@ -386,12 +386,57 @@ exports.getPendingEmiDetails = async (req, res) => {
 //         });
 // }
 
+
+
+// Import required modules
+
+
+// Define the function to handle the API endpoint
 exports.ledgerDatas = (req, res) => {
     const params = req.query;
+
+    const constructFilterOptions = (params) => {
+        const filterOptions = {};
+
+        if (params.startDate && params.endDate) {
+            const startDate = new Date(params.startDate);
+            const endDate = new Date(params.endDate);
+            filterOptions.entryDate = {
+                $gte: startDate,
+                $lte: endDate
+            };
+        } else if (params.startDate) {
+            const startDate = new Date(params.startDate);
+            filterOptions.entryDate = {
+                $gte: startDate
+            };
+        } else if (params.endDate) {
+            const endDate = new Date(params.endDate);
+            filterOptions.entryDate = {
+                $lte: endDate
+            };
+        }
+
+        if (params.isExpense !== undefined) {
+            filterOptions.isExpense = params.isExpense;
+        }
+        if (params.isInvestment !== undefined) {
+            filterOptions.isInvestment = params.isInvestment;
+        }
+        if (params.isLoanDebit !== undefined) {
+            filterOptions.isLoanDebit = params.isLoanDebit;
+        }
+        if (params.isLoanCredit !== undefined) {
+            filterOptions.isLoanCredit = params.isLoanCredit;
+        }
+
+        return filterOptions;
+    };
+
     const filterOptions = constructFilterOptions(params);
 
     ledgerModel.find(filterOptions)
-        .sort({ entryDate: -1 }) // Sort by entryDate in descending order
+        .sort({ entryDate: -1 })
         .then(results => {
             res.json(results);
         })
@@ -399,45 +444,7 @@ exports.ledgerDatas = (req, res) => {
             console.error('Error:', err);
             res.status(500).send('Internal Server Error');
         });
-};
-
-const constructFilterOptions = (params) => {
-    const filterOptions = {};
-
-    if (params.startDate && params.endDate) {
-        const startDate = new Date(params.startDate);
-        const endDate = new Date(params.endDate);
-        filterOptions.entryDate = {
-            $gte: startDate,
-            $lte: endDate
-        };
-    } else if (params.startDate) {
-        const startDate = new Date(params.startDate);
-        filterOptions.entryDate = {
-            $gte: startDate
-        };
-    } else if (params.endDate) {
-        const endDate = new Date(params.endDate);
-        filterOptions.entryDate = {
-            $lte: endDate
-        };
-    }
-
-    if (params.isExpense !== undefined) {
-        filterOptions.isExpense = params.isExpense;
-    }
-    if (params.isInvestment !== undefined) {
-        filterOptions.isInvestment = params.isInvestment;
-    }
-    if (params.isLoanDebit !== undefined) {
-        filterOptions.isLoanDebit = params.isLoanDebit;
-    }
-    if (params.isLoanCredit !== undefined) {
-        filterOptions.isLoanCredit = params.isLoanCredit;
-    }
-
-    return filterOptions;
-};
+}
 
 
 exports.getOverDueUsers = async (req, res) => {
