@@ -407,8 +407,13 @@ exports.ledgerDatas = (req, res) => {
             };
         } else if (params.startDate) {
             const startDate = new Date(params.startDate);
+            // Set end date to the same as the start date
+            const endDate = new Date(params.startDate);
+            // Adjust end date to end of the day (23:59:59) to include all entries of the day
+            endDate.setHours(23, 59, 59, 999);
             filterOptions.entryDate = {
-                $gte: startDate
+                $gte: startDate,
+                $lte: endDate
             };
         } else if (params.endDate) {
             const endDate = new Date(params.endDate);
