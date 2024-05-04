@@ -1,7 +1,65 @@
 const UserModel = require('../model/loanModel');
+const ledgerModel = require('./../model/ledgerModel');
+
 const {updateOverdueInstallmentsForOne, updateLoanDetails, updateLoanStatus} = require('../customFunctions/loanFunctions')
 const {updateOverdueInstallments} = require('../customFunctions/overDueCalculator')
-const ledgerModel = require('./../model/ledgerModel');
+
+// exports.createUser = async (req, res) => {
+//     const session = await UserModel.startSession();
+//     session.startTransaction();
+//     try {
+//         const lastUser = await UserModel.findOne({}, {}, { sort: { 'loanNumber': -1 } }).session(session);
+//         let lastLoanNumber = 0;
+//         if (lastUser && !isNaN(lastUser.loanNumber)) {
+//             lastLoanNumber = lastUser.loanNumber;
+//         }
+//         const newLoanNumber = lastLoanNumber + 1;
+
+//         // Get the last debitReceiptNumber
+//         const lastDebitReceiptNumber = lastUser ? lastUser.debitReceiptNumber : "D-0";
+//         const lastReceiptNumberMatch = lastDebitReceiptNumber.match(/D-(\d+)/);
+//         let lastReceiptNumber = 0;
+//         if (lastReceiptNumberMatch && lastReceiptNumberMatch[1]) {
+//             lastReceiptNumber = parseInt(lastReceiptNumberMatch[1]);
+//         }
+
+//         // Increment the last receipt number to get the new one
+//         const newReceiptNumber = `D-${lastReceiptNumber + 1}`;
+
+//         console.log("Last Debit Receipt Number:", lastDebitReceiptNumber);
+//         console.log("New Debit Receipt Number:", newReceiptNumber);
+
+//         // Directly pass req.body to the UserModel constructor
+//         const user = new UserModel({ loanNumber: newLoanNumber, debitReceiptNumber: newReceiptNumber, ...req.body });
+//         await user.save({ session });
+        
+//         // Call updateOverdueInstallmentsForOne with the new loan number
+//         await updateOverdueInstallmentsForOne(newLoanNumber, session);
+
+//         // Creating ledger entry
+//         const ledgerEntry = new ledgerModel({
+//             isLoanDebit: true,
+//             loanNumber: newLoanNumber,
+//             receiptNumber: newReceiptNumber, // Including 'D-' prefix
+//             remarks: req.body.details.loanPayerDetails.name,
+//             total: req.body.loanDetails.totalPrincipalAmount,
+//             creditOrDebit: 'Debit',
+//             paymentMethod: req.body.paymentMethod
+//         });
+//         await ledgerEntry.save({ session });
+
+//         await session.commitTransaction();
+//         session.endSession();
+
+//         res.status(201).json({ status: 'success', message: 'User created successfully', user });
+//     } catch (err) {
+//         await session.abortTransaction();
+//         session.endSession();
+//         res.status(422).json({ status: 'error', message: 'All fields required', error: err });
+//         console.log(err);
+//     }
+// };
+
 
 exports.createUser = async (req, res) => {
     const session = await UserModel.startSession();
@@ -47,11 +105,17 @@ exports.createUser = async (req, res) => {
         });
         await ledgerEntry.save({ session });
 
+        // Commit the transaction
         await session.commitTransaction();
         session.endSession();
 
+        // Call updateLoanDetails with the new loan number
+        await updateLoanDetails(newLoanNumber);
+
+        // Send response
         res.status(201).json({ status: 'success', message: 'User created successfully', user });
     } catch (err) {
+        // Handle errors
         await session.abortTransaction();
         session.endSession();
         res.status(422).json({ status: 'error', message: 'All fields required', error: err });
