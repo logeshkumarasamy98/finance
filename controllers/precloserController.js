@@ -97,7 +97,7 @@ exports.calculate_pre_closer = async (req, res) => {
 
 exports.UpdatePrecloser = async (req, res) => {
     const { loanNumber } = req.params;
-    const { date, OverdueforPrecloser } = req.body;
+    const { date, OverdueforPrecloser, forceCloseApproverName } = req.body;
 
     try {
         // Start a session
@@ -112,7 +112,16 @@ exports.UpdatePrecloser = async (req, res) => {
             session.endSession();
             return res.status(404).json({ error: 'User not found' });
         }
+        if (user.loanDetails.preCloser.hasPreCloser) {
+            session.endSession();
+            return res.status(400).json({ error: 'This loan is already preclosed' });
+        }
 
+        // Check if the loan is already closed
+        if (!user.loanDetails.isActive) {
+            session.endSession();
+            return res.status(400).json({ error: 'This loan is already closed' });
+        }
         // Convert user input date to a Date object
         const providedDate = new Date(date);
 
@@ -169,6 +178,9 @@ exports.UpdatePrecloser = async (req, res) => {
         user.loanDetails.pendingEmiNum = 0;
         user.loanDetails.emiPendingDate = null;
 
+        if (forceCloseApproverName) {
+            user.loanDetails.forceCloseApproverName = forceCloseApproverName;
+        }
         // Save the updated user within the session
         await user.save({ session });
 

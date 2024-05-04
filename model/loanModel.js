@@ -36,6 +36,7 @@ const userSchema = new mongoose.Schema({
         emiPending:{type:Boolean, default:false},
         pendingEmiNum:{type: Number, default:null},
         emiPendingDate:{type : Date, default:null},
+        forceCloseApproverName:{ type: String, default:null },
 
         preCloser: {
             hasPreCloser: { type: Boolean, default: false },
