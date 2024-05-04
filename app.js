@@ -16,10 +16,6 @@ app.use(cors());
 app.use(express.json()); 
 
 
-app.patch('/UpdatePrecloser/:loanNumber', precloserController.UpdatePrecloser)
-
-
-app.get('/calculate-pre-closer/:loanNumber', precloserController.calculate_pre_closer)
 
 // app.get(('/filter/ledgerDatas'), filterDashboard.ledgerDatas );
 // CORS setup
@@ -63,6 +59,8 @@ authRouter.post('/signup', authController.signup);
 app.post(('/ledger/expense'), ledgerController.expense)
 app.post(('/ledger/investment'), ledgerController.investment)
 
+app.patch('/UpdatePrecloser/:loanNumber', precloserController.UpdatePrecloser)
+app.get('/calculate-pre-closer/:loanNumber', precloserController.calculate_pre_closer)
 // Mount routers
 app.use('/api/loan', loanRouter);
 app.use('/filter', filterDashboardRouter);
