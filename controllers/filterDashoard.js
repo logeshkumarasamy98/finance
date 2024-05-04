@@ -447,8 +447,8 @@ exports.ledgerDatas = (req, res) => {
     ledgerModel.find(filterOptions)
         .sort({ entryDate: -1 })
         .then(results => {
-            const length = results.length;
-            res.json({length, results});
+            
+            res.json({ results});
         })
         .catch(err => {
             console.error('Error:', err);
