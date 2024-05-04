@@ -422,28 +422,33 @@ exports.ledgerDatas = (req, res) => {
             };
         }
 
-        if (params.isExpense !== undefined) {
-            filterOptions.isExpense = params.isExpense;
+        const orConditions = [];
+        if (params.hasOwnProperty('isExpense')) {
+            orConditions.push({ isExpense: params.isExpense });
         }
-        if (params.isInvestment !== undefined) {
-            filterOptions.isInvestment = params.isInvestment;
+        if (params.hasOwnProperty('isInvestment')) {
+            orConditions.push({ isInvestment: params.isInvestment });
         }
-        if (params.isLoanDebit !== undefined) {
-            filterOptions.isLoanDebit = params.isLoanDebit;
+        if (params.hasOwnProperty('isLoanDebit')) {
+            orConditions.push({ isLoanDebit: params.isLoanDebit });
         }
-        if (params.isLoanCredit !== undefined) {
-            filterOptions.isLoanCredit = params.isLoanCredit;
+        if (params.hasOwnProperty('isLoanCredit')) {
+            orConditions.push({ isLoanCredit: params.isLoanCredit });
         }
-
+        if (orConditions.length > 0) {
+            filterOptions.$or = orConditions;
+        }
+    
         return filterOptions;
     };
-
+    
     const filterOptions = constructFilterOptions(params);
 
     ledgerModel.find(filterOptions)
         .sort({ entryDate: -1 })
         .then(results => {
-            res.json(results);
+            const length = results.length;
+            res.json({length, results});
         })
         .catch(err => {
             console.error('Error:', err);
