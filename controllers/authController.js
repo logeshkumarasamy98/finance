@@ -1,10 +1,20 @@
+const express = require('express');
+const app = express();
 const Company = require('./../model/company');
 const UserModel = require('./../model/authModel');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
 // const cookieParser = require('cookie-parser');
 // app.use(cookieParser());
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = '7Gh5ZD8J2K6Lm9N0Pq2Rs5Tu8Vx1Y';
+app.use(cors({
+    origin: 'http://localhost:3001', // your client's origin
+    credentials: true // to allow cookies to be sent
+}));
+app.use(express.json());
+app.use(cookieParser());
 
 
 exports.createCompany =  async (req, res) => {
