@@ -1,14 +1,17 @@
-const UserModel = require('../model/loanModel');
+const loanModel = require('../model/loanModel');
 const ledgerModel = require('./../model/ledgerModel');
+const companyModel = require('./../model/company');
+const userModel = require('./../model/authModel');
+
 
 const {updateOverdueInstallmentsForOne, updateLoanDetails, updateLoanStatus} = require('../customFunctions/loanFunctions')
 const {updateOverdueInstallments} = require('../customFunctions/overDueCalculator')
 
 // exports.createUser = async (req, res) => {
-//     const session = await UserModel.startSession();
+//     const session = await loanModel.startSession();
 //     session.startTransaction();
 //     try {
-//         const lastUser = await UserModel.findOne({}, {}, { sort: { 'loanNumber': -1 } }).session(session);
+//         const lastUser = await loanModel.findOne({}, {}, { sort: { 'loanNumber': -1 } }).session(session);
 //         let lastLoanNumber = 0;
 //         if (lastUser && !isNaN(lastUser.loanNumber)) {
 //             lastLoanNumber = lastUser.loanNumber;
@@ -29,8 +32,8 @@ const {updateOverdueInstallments} = require('../customFunctions/overDueCalculato
 //         console.log("Last Debit Receipt Number:", lastDebitReceiptNumber);
 //         console.log("New Debit Receipt Number:", newReceiptNumber);
 
-//         // Directly pass req.body to the UserModel constructor
-//         const user = new UserModel({ loanNumber: newLoanNumber, debitReceiptNumber: newReceiptNumber, ...req.body });
+//         // Directly pass req.body to the loanModel constructor
+//         const user = new loanModel({ loanNumber: newLoanNumber, debitReceiptNumber: newReceiptNumber, ...req.body });
 //         await user.save({ session });
         
 //         // Call updateOverdueInstallmentsForOne with the new loan number
@@ -62,10 +65,10 @@ const {updateOverdueInstallments} = require('../customFunctions/overDueCalculato
 
 
 // exports.createUser = async (req, res) => {
-//     const session = await UserModel.startSession();
+//     const session = await loanModel.startSession();
 //     session.startTransaction();
 //     try {
-//         const lastUser = await UserModel.findOne({}, {}, { sort: { 'loanNumber': -1 } }).session(session);
+//         const lastUser = await loanModel.findOne({}, {}, { sort: { 'loanNumber': -1 } }).session(session);
 //         let lastLoanNumber = 0;
 //         if (lastUser && !isNaN(lastUser.loanNumber)) {
 //             lastLoanNumber = lastUser.loanNumber;
@@ -86,8 +89,8 @@ const {updateOverdueInstallments} = require('../customFunctions/overDueCalculato
 //         console.log("Last Debit Receipt Number:", lastDebitReceiptNumber);
 //         console.log("New Debit Receipt Number:", newReceiptNumber);
 //         console.log(req.userId);
-//         // Directly pass req.body to the UserModel constructor
-//         const user = new UserModel({ 
+//         // Directly pass req.body to the loanModel constructor
+//         const user = new loanModel({ 
 //             loanNumber: newLoanNumber, 
 //             debitReceiptNumber: newReceiptNumber, 
 //             createdBy: req.userId, // Set the createdBy field to the userId
@@ -130,13 +133,13 @@ const {updateOverdueInstallments} = require('../customFunctions/overDueCalculato
 // };
 
 exports.createUser = async (req, res) => {
-    const session = await UserModel.startSession();
+    const session = await loanModel.startSession();
     session.startTransaction();
     try {
         const companyId = req.companyId;
 
         // Find the last user based on the company ID
-        const lastUser = await UserModel.findOne({ company: companyId }, {}, { sort: { 'loanNumber': -1 } }).session(session);
+        const lastUser = await loanModel.findOne({ company: companyId }, {}, { sort: { 'loanNumber': -1 } }).session(session);
 
         let lastLoanNumber = 0;
         if (lastUser && !isNaN(lastUser.loanNumber)) {
@@ -145,7 +148,7 @@ exports.createUser = async (req, res) => {
         const newLoanNumber = lastLoanNumber + 1;
 
         // Get the last debitReceiptNumber for the specific company
-        const lastDebitReceiptUser = await UserModel.findOne({ company: companyId }, {}, { sort: { 'debitReceiptNumber': -1 } }).session(session);
+        const lastDebitReceiptUser = await loanModel.findOne({ company: companyId }, {}, { sort: { 'debitReceiptNumber': -1 } }).session(session);
         const lastDebitReceiptNumber = lastDebitReceiptUser ? lastDebitReceiptUser.debitReceiptNumber : "D-0";
         const lastReceiptNumberMatch = lastDebitReceiptNumber.match(/D-(\d+)/);
         let lastReceiptNumber = 0;
@@ -160,8 +163,8 @@ exports.createUser = async (req, res) => {
         console.log("New Debit Receipt Number:", newReceiptNumber);
         console.log(req.userId);
 
-        // Directly pass req.body to the UserModel constructor
-        const user = new UserModel({
+        // Directly pass req.body to the loanModel constructor
+        const user = new loanModel({
             loanNumber: newLoanNumber,
             debitReceiptNumber: newReceiptNumber,
             createdBy: req.userId, // Set the createdBy field to the userId
@@ -182,7 +185,9 @@ exports.createUser = async (req, res) => {
             remarks: req.body.details.loanPayerDetails.name,
             total: req.body.loanDetails.totalPrincipalAmount,
             creditOrDebit: 'Debit',
-            paymentMethod: req.body.paymentMethod
+            paymentMethod: req.body.paymentMethod,
+            createdBy: req.userId, // Set the createdBy field to the userId
+            company: companyId
         });
         await ledgerEntry.save({ session });
 
@@ -207,7 +212,7 @@ exports.createUser = async (req, res) => {
 // exports.getUsers = async(req, res)=>{
 //     try{
 //       const loanNumber = req.params.loanNumber;
-//       const user = await UserModel.findOne({loanNumber });
+//       const user = await loanModel.findOne({loanNumber });
   
 //       if(!user) {
 //         return res.status(404).json({error: 'User Not Found'})
@@ -216,32 +221,43 @@ exports.createUser = async (req, res) => {
 //     }catch(err){
 //       res.status(400).json({error: err.message});
 //     }
-// };
+// };|
+
 exports.getUsers = async (req, res) => {
     try {
         const { loanNumber } = req.params;
-        const { companyId } = req.companyId;
-        console.log(companyId)
-        // Find the user by loanNumber and companyId
-        const user = await UserModel.findOne({ loanNumber, company: companyId });
+        const companyId = req.companyId; // Assuming companyId is available in the request object
 
-        // Check if the user was found
+        // Find the loan by loanNumber and companyId
+        const user = await loanModel.findOne({ loanNumber, company: companyId });
+
+        // Check if the loan was found
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            return res.status(404).json({ error: 'Loan not found' });
         }
 
+        // Fetch company details
+        const company = await companyModel.findById(user.company);
+        const companyName = company ? company.name : null;
+
+        // Fetch user details who created the entry
+        const createdByUser = await userModel.findById(user.createdBy);
+        const createdByName = createdByUser ? createdByUser.name : null;
+        
+
         // Send the response with the user
-        res.status(200).json({ status: 'success', user });
+        res.status(200).json({ status: 'success', user, companyName,  createdByName });
     } catch (err) {
         // Handle errors and send a response
         res.status(400).json({ error: err.message });
     }
 };
 
+
 exports.getAllUsers = async (req, res) => {
     try {
         // Initialize query to find users belonging to the authenticated user's company
-        let query = UserModel.find({ company: req.companyId });
+        let query = loanModel.find({ company: req.companyId });
 
         // Select specific fields if specified in the query parameters
         if (req.query.fields) {
@@ -265,13 +281,13 @@ exports.getAllUsers = async (req, res) => {
 };
 
 // exports.updateLoanPayer = async (req, res) => {
-//     const session = await UserModel.startSession();
+//     const session = await loanModel.startSession();
 //     session.startTransaction();
 //     try {
 //         const { installmentNo, emiPaid, overdueAmount, overduePaid, paidDate } = req.body;
 
 //         // Find the user by loanNumber
-//         const user = await UserModel.findOne({ loanNumber: req.params.loanNumber }).session(session);
+//         const user = await loanModel.findOne({ loanNumber: req.params.loanNumber }).session(session);
 
 //         // Check if user is found
 //         if (!user) {
@@ -390,7 +406,7 @@ exports.getAllUsers = async (req, res) => {
 //         const { installmentNo, emiPaid, overdueAmount, overduePaid, paidDate } = req.body;
 
 //         // Find the user by loanNumber
-//         const user = await UserModel.findOne({ loanNumber: req.params.loanNumber });
+//         const user = await loanModel.findOne({ loanNumber: req.params.loanNumber });
 
 //         // Check if user is found
 //         if (!user) {
@@ -500,7 +516,7 @@ exports.updateLoanPayer = async (req, res) => {
         const userId = req.userId; // Assuming userId is available in the request object
 
         // Find the user by loanNumber and company
-        const user = await UserModel.findOne({ loanNumber: req.params.loanNumber, company: companyId });
+        const user = await loanModel.findOne({ loanNumber: req.params.loanNumber, company: companyId });
 
         // Check if user is found
         if (!user) {
@@ -574,10 +590,14 @@ exports.updateLoanPayer = async (req, res) => {
             total,
             creditOrDebit: 'Credit',
             paymentMethod: req.body.paymentMethod,
+            createdBy: req.userId, // Set the createdBy field to the userId
             company: companyId // Ensure the ledger entry is associated with the correct company
         });
         await ledgerEntry.save();
+        const company = await companyModel.findById(companyId);
 
+        // Fetch the user details who created the entry
+        const createdByUser = await userModel.findById(userId);
         const installmentDetails = {
             loanNumber: user.loanNumber,
             installmentNo: installmentObject.installmentNo,
@@ -593,7 +613,9 @@ exports.updateLoanPayer = async (req, res) => {
             name,
             mobileNum1,
             address,
-            pincode
+            pincode,
+            company: company.name, // Access company's name directly
+            createdBy: createdByUser.name
         };
 
         res.status(200).json({ message: 'Loan payer updated successfully', installmentDetails });

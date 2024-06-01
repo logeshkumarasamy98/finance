@@ -6,7 +6,8 @@ exports.expense = async (req, res) => {
     try {
         const { paymentMethod, remarks, total } = req.body;
         const entryDate = req.body.entryDate || new Date(); // Use provided entry date or current date if not provided
-
+        const companyId = req.companyId; // Assuming companyId is available in the request object
+        const userId = req.userId;
         // Update isExpense field based on conditions
         const isExpense = true;
 
@@ -18,6 +19,8 @@ exports.expense = async (req, res) => {
             isExpense,
             creditOrDebit: 'Debit', // Always set creditOrDebit as "Debit"
             entryDate,
+            createdBy: userId, // Set the createdBy field to the userId
+            company: companyId
             // Add other fields as needed
         });
 
@@ -44,7 +47,8 @@ exports.investment = async (req, res) => {
     try {
         const { paymentMethod, remarks, total } = req.body;
         const entryDate = req.body.entryDate || new Date(); // Use provided entry date or current date if not provided
-
+        const companyId = req.companyId; // Assuming companyId is available in the request object
+        const userId = req.userId;
         // Set isInvestment to true
         const isInvestment = true;
 
@@ -58,8 +62,9 @@ exports.investment = async (req, res) => {
             total,
             isInvestment,
             creditOrDebit,
-            entryDate, // Adding the entryDate field
-            // Add other fields as needed
+            entryDate, 
+            createdBy: userId, 
+            company: companyId
         });
 
         // Save the new entry to the database
