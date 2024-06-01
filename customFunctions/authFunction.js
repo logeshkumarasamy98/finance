@@ -1,23 +1,43 @@
-const jwt = require('jsonwebtoken'); 
-require('dotenv').config({path:'./config.env'});
+const jwt = require('jsonwebtoken');
+const User = require('../model/authModel');
 
-const your_secret_key = process.env.SECRET_KEY;
+const JWT_SECRET = '7Gh5ZD8J2K6Lm9N0Pq2Rs5Tu8Vx1Y'; // Replace with a secure secret key
 
+// Middleware to check user role (admin or user)
+const auth = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
 
-function verifyToken(req, res, next) {
-    const token = req.headers.authorization; // Assuming token is passed in the Authorization header
     if (!token) {
-        return res.status(401).json({ message: "Access denied. No token provided." });
+      return res.status(401).send({ error: 'No authorization token provided' });
     }
 
-    jwt.verify(token.split(' ')[1], your_secret_key, (err, decoded) => {
-        if (err) {
-            return res.status(401).json({ message: "Invalid token." });
-        }
-        req.user = decoded; // Attach decoded user information to the request object
-        next(); // Call next middleware
-        
-    });
-}
+    const decoded = await jwt.verify(token, JWT_SECRET);
 
-module.exports = {verifyToken}
+    const userId = decoded.userId;
+    const companyId = decoded.companyId;
+
+    console.log('User ID:', userId);
+    console.log('Company ID:', companyId);
+
+    const user = await User.findOne({ _id: userId }).populate('companies');
+
+    // console.log('User:', user);
+
+    if (!user) {
+      return res.status(404).send({ error: 'User not found' });
+    }
+
+    req.userId = userId;
+    req.companyId = companyId;
+
+    next();
+  } catch (error) {
+    console.error('Error:', error);
+
+    // Consider sending a more informative error message depending on the error type
+    res.status(401).send({ error: 'Authentication failed' });
+  }
+};
+
+module.exports = auth;

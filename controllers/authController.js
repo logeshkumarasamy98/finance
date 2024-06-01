@@ -1,96 +1,81 @@
-const auth = require('./../model/authModel');
-const mongoose = require('mongoose');
+const Company = require('./../model/company');
+const UserModel = require('./../model/authModel');
+// const cookieParser = require('cookie-parser');
+// app.use(cookieParser());
 const jwt = require('jsonwebtoken');
-require('dotenv').config({path:'./config.env'});
-const { updateOverdueInstallments } = require('./../customFunctions/overDueCalculator');
-const bcrypt = require('bcryptjs');
 
-// const your_secret_key = "9d7e0cf9b9a5ef1f1b4a6e5f7c8d3b2a";
-const your_secret_key = process.env.SECRET_KEY;
+const JWT_SECRET = '7Gh5ZD8J2K6Lm9N0Pq2Rs5Tu8Vx1Y';
 
 
-
-
-exports.signIn = async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-      await mongoose.connect(process.env.USER_DB);
-      console.log('DB connected... & user authenticated.');
-
-      const user = await auth.findOne({ email });
-
-      if (!user) {
-          return res.status(404).json({ message: "User not found" });
-      }
-
-      const isPasswordMatch = await bcrypt.compare(password, user.password);
-
-      if (!isPasswordMatch) {
-          return res.status(401).json({ message: "Invalid password" });
-      }
-
-      console.log(`User found: ${user.email}`);
-
-
-      const token = jwt.sign({ email: user.email }, your_secret_key, { expiresIn: '2H' });
-
-      await mongoose.disconnect();
-      const companyName = user.companyName;
-
-      await mongoose.connect(`mongodb+srv://logeshpriyanga:logesh98@cluster0.i7qbne1.mongodb.net/${user.DB}`);
-      console.log(token)
-      console.log(`Connected to ${user.DB} database`);
-
-      res.cookie('token', token, {httpOnly: true});
-      res.status(200).json({ message: "Sign-in successful", companyName });
-
-      // Perform any additional operations after successful login
-      await updateOverdueInstallments();
-
-  } catch (error) {
-      res.status(500).json({ message: "Internal server error", error });
-      return
-  }
+exports.createCompany =  async (req, res) => {
+    try {
+        const company = new Company(req.body);
+        await company.save(); // Use `save()` method, not `Save()`
+        res.status(201).send(company);
+    } catch (error) {
+        res.status(400).send(error);
+    }
 };
 
 
-
-exports.signup = async (req, res) => {
-    const { email, password, confirmPassword, DB, signUpKey, companyName } = req.body;
-
+exports.createUser =  async (req, res) => {
     try {
-        if (password !== confirmPassword) {
-            return res.status(400).json({ message: "Password and confirm password do not match" });
-        }
-
-        // Verify if the provided signup key matches the one from environment variables
-        if (signUpKey !== process.env.SIGNUP_KEY) {
-            return res.status(401).json({ message: "Invalid signup key" });
-        }
-
-        // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Connect to the database
-        await mongoose.connect(process.env.USER_DB);
-        console.log('DB connected... & user authenticated.');
-
-        // Create a new user with hashed password
-        const newUser = new auth({
-            email: email,
-            password: hashedPassword,
-            DB: DB,
-            companyName:companyName
-        });
-
-        // Save the user to the database
-        await newUser.save();
-
-        res.status(201).json({ message: 'User created successfully' });
-        return;
+      const { name, email, password, role, companyName } = req.body;
+  
+      // Ensure all required fields are provided
+      if (!name || !email || !password || !role || !companyName) {
+        return res.status(400).send({ error: 'All fields are required' });
+      }
+  
+      // Find the company ID based on the company name
+      const company = await Company.findOne({ name: companyName });
+      if (!company) {
+        return res.status(404).send({ error: 'Company not found' });
+      }
+  
+      const user = new UserModel({ name, email, password, role, companies: [company._id] });
+      await user.save();
+      res.status(201).send(user);
     } catch (error) {
-        res.status(500).json({ message: 'Error creating user', error: error.message });
-        return;
+      res.status(400).send(error);
     }
-}
+  };
+
+
+  exports.signIn = async (req, res) => {
+    try {
+        console.log('testSignin')
+        const { email, password } = req.body;
+
+        // Ensure email and password are provided
+        if (!email || !password) {
+            return res.status(400).send({ error: 'Email and password are required' });
+        }
+
+        // Find user by email
+        const user = await UserModel.findOne({ email }).populate('companies');
+        if (!user) {
+            return res.status(401).send({ error: 'Invalid email or password' });
+        }
+
+        // Compare passwords (plaintext vs hashed)
+        if (user.password !== password) {
+            return res.status(401).send({ error: 'Invalid email or password' });
+        }
+
+        // Extract the first company ID from the user's companies array
+        const companyId = user.companies.length > 0 ? user.companies[0]._id : null;
+
+        // Generate JWT token with userId, role, and companyId
+        const token = jwt.sign({ userId: user._id, role: user.role, companyId }, JWT_SECRET, { expiresIn: '1h' });
+
+        // Send token in response
+        // res.cookie('token', token, {httpOnly: true});
+        res.cookie('token', token, {httpOnly: true});
+        res.status(200).json({ message: "Sign-in successful"});
+  
+    } catch (error) {
+        console.log(error)
+        res.status(400).send({ error: 'An error occurred while signing in' });
+    }
+};

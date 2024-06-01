@@ -1,20 +1,26 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const UserModel = require('./model/loanModel');
+const UserModel = require('./model/authModel');
 const loanController = require('./controllers/loanController');
 const ledgerController = require('./controllers/ledgerController');
 const precloserController = require('./controllers/precloserController');
 
 const authController = require('./controllers/authController');
+const auth  = require('./customFunctions/authFunction')
 const filterDashboard = require('./controllers/filterDashoard');
 const { verifyToken } = require('./customFunctions/authFunction');
 const { updateLoanDetails } = require('./customFunctions/loanFunctions')
-const ledgerModel = require('./model/ledgerModel')
+const ledgerModel = require('./model/ledgerModel');
+const jwt = require('jsonwebtoken');
+const Company = require('./model/company');
+const cookieParser = require('cookie-parser');
+
 app.use(cors());
 
 app.use(express.json()); 
 
+app.use(cookieParser());
 
 
 // app.get(('/filter/ledgerDatas'), filterDashboard.ledgerDatas );
@@ -28,33 +34,35 @@ app.use((req, res, next) => {
 
 // Define loan routes
 const loanRouter = express.Router();
-loanRouter.post('/', loanController.createUser);
-loanRouter.get('/:loanNumber', loanController.getUsers);
-loanRouter.get('/',  loanController.getAllUsers);
-loanRouter.patch('/patch/:loanNumber', loanController.updateLoanPayer);
+loanRouter.post('/', auth,  loanController.createUser);
+loanRouter.get('/:loanNumber', auth, loanController.getUsers);
+loanRouter.get('/', auth, loanController.getAllUsers);
+loanRouter.patch('/patch/:loanNumber', auth ,  loanController.updateLoanPayer);
 
 // Define filter dashboard routes
 const filterDashboardRouter = express.Router();
-filterDashboardRouter.get('/activeLoanPayer', filterDashboard.activeLoanPayer);
-filterDashboardRouter.get('/vehicleTypePercentage', filterDashboard.vehicleTypePercentage);
-filterDashboardRouter.get('/LoanPayerDetails/:loanNumber', filterDashboard.LoanPayerDetails);
-filterDashboardRouter.get('/getPendingEmiDetails', filterDashboard.getPendingEmiDetails);
-filterDashboardRouter.get('/pendingEmiPayerLength', filterDashboard.pendingEmiPayerLength);
-filterDashboardRouter.get('/ledgerDatas', filterDashboard.ledgerDatas);
-filterDashboardRouter.get('/getOverDueUsers', filterDashboard.getOverDueUsers);
+filterDashboardRouter.get('/activeLoanPayer',auth, filterDashboard.activeLoanPayer);
+filterDashboardRouter.get('/vehicleTypePercentage', auth, filterDashboard.vehicleTypePercentage);
+filterDashboardRouter.get('/LoanPayerDetails/:loanNumber',auth, filterDashboard.LoanPayerDetails);
+filterDashboardRouter.get('/getPendingEmiDetails', auth, filterDashboard.getPendingEmiDetails);
+filterDashboardRouter.get('/pendingEmiPayerLength',auth, filterDashboard.pendingEmiPayerLength);
+filterDashboardRouter.get('/ledgerDatas', auth,filterDashboard.ledgerDatas);
+filterDashboardRouter.get('/getOverDueUsers', auth,filterDashboard.getOverDueUsers);
 filterDashboardRouter.get('/getOverDueLength', filterDashboard.getOverDueLength);
-filterDashboardRouter.get('/activeLoanPayerLength', filterDashboard.activeLoanPayerLength);
-filterDashboardRouter.get('/closedLoanPayer', filterDashboard.closedLoanPayer);
-filterDashboardRouter.get('/closedLoanPayerLength', filterDashboard.closedLoanPayerLength);
-filterDashboardRouter.get('/seizedLoanPayerLength', filterDashboard.seizedLoanPayerLength);
-filterDashboardRouter.get('/seizedLoanPayer', filterDashboard.seizedLoanPayer);
+filterDashboardRouter.get('/activeLoanPayerLength', auth,  filterDashboard.activeLoanPayerLength);
+filterDashboardRouter.get('/closedLoanPayer',auth, filterDashboard.closedLoanPayer);
+filterDashboardRouter.get('/closedLoanPayerLength',auth, filterDashboard.closedLoanPayerLength);
+filterDashboardRouter.get('/seizedLoanPayerLength',auth, filterDashboard.seizedLoanPayerLength);
+filterDashboardRouter.get('/seizedLoanPayer',auth, filterDashboard.seizedLoanPayer);
 
 
 
 // Define auth routes
 const authRouter = express.Router();
 authRouter.post('/signin', authController.signIn);
-authRouter.post('/signup', authController.signup);
+authRouter.post('/createUser', authController.createUser);
+authRouter.post('/createCompany', authController.createCompany);
+
 
 app.post(('/ledger/expense'), ledgerController.expense)
 app.post(('/ledger/investment'), ledgerController.investment)

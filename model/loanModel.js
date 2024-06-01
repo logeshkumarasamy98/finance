@@ -1,56 +1,62 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-    
-    loanNumber: { type: Number, unique: true },
-    debitReceiptNumber:{type:String, require:true},
-
+    loanNumber: { type: Number},
+    debitReceiptNumber: { type: String, require: true },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User', // Reference to the User model
+        required: true
+    },
+    company: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Company', // Reference to the Company model
+        required: true
+    },
     loanDetails: {
         isActive: { type: Boolean, required: true },
         isSeized: { type: Boolean, required: true },
         isDocumentSettled: { type: Boolean, required: true },
-        instalment: { type: Number, required: [true, 'installment required'], min:[6, 'Minimum 8 months required'], max :[40, 'Max number exceed']},
-        totalPrincipalAmount: { type: Number, required: true, min:[3000, 'Minimum 3000 required'],max :[1000000, 'Max number exceed']  },
-        interestRate: { type: Number, required: true, max :[10, 'Max number exceed'] },
+        instalment: { type: Number, required: [true, 'installment required'], min: [6, 'Minimum 8 months required'], max: [40, 'Max number exceed'] },
+        totalPrincipalAmount: { type: Number, required: true, min: [3000, 'Minimum 3000 required'], max: [1000000, 'Max number exceed'] },
+        interestRate: { type: Number, required: true, max: [10, 'Max number exceed'] },
         startDate: { type: Date, required: true },
         instalmentObject: [{
-            installmentNo: { type: Number, required: true, max :[40, 'Max number exceed'] },
+            installmentNo: { type: Number, required: true, max: [40, 'Max number exceed'] },
             isPaid: { type: Boolean, default: false },
             dueDate: { type: Date, required: true },
             paidDate: { type: Date },
-            emiPaid: {type: Number, default:null},
+            emiPaid: { type: Number, default: null },
             receiptNumber: { type: String },
             principleAmountPerMonth: { type: Number },
             interestAmount: { type: Number },
             totalEmiAmount: { type: Number },
-            totalEmiAmountRoundoff:{type: Number},
+            totalEmiAmountRoundoff: { type: Number },
             overdueAmount: { type: Number },
             overduePaid: { type: Number },
-            overDueBalance:{type: Number},
+            overDueBalance: { type: Number },
+            updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' } // Field to store the user who updated the installment
         }],
-        totalEmiAlreadyPaid: {type: Number},
-        totalEmiAmount: { type: Number},
-        totalEmiBalance:{type:Number},
-        totalOverdueAmountToBePaid: {type: Number},
-        totalEmiAndOverdueToBePaid: {type:Number},
-        emiPending:{type:Boolean, default:false},
-        pendingEmiNum:{type: Number, default:null},
-        emiPendingDate:{type : Date, default:null},
-        forceCloseApproverName:{ type: String, default:null },
-
+        totalEmiAlreadyPaid: { type: Number },
+        totalEmiAmount: { type: Number },
+        totalEmiBalance: { type: Number },
+        totalOverdueAmountToBePaid: { type: Number },
+        totalEmiAndOverdueToBePaid: { type: Number },
+        emiPending: { type: Boolean, default: false },
+        pendingEmiNum: { type: Number, default: null },
+        emiPendingDate: { type: Date, default: null },
+        forceCloseApproverName: { type: String, default: null },
         preCloser: {
             hasPreCloser: { type: Boolean, default: false },
             isPrecloserBelow3Months: { type: Boolean, default: false },
             isPrecloserAbove3Months: { type: Boolean, default: false },
-            preCloserDate: { type: Date, default:null },
-            preCloserTotalAmount: { type: Number, default:null },
-            preCloserPrincipleAmount: { type: Number,  default:null },
-            preCloserInterestAmount: { type: Number, default:null },
-            preCloserOverDue: { type: Number, default:null }
+            preCloserDate: { type: Date, default: null },
+            preCloserTotalAmount: { type: Number, default: null },
+            preCloserPrincipleAmount: { type: Number, default: null },
+            preCloserInterestAmount: { type: Number, default: null },
+            preCloserOverDue: { type: Number, default: null }
         }
-
-    }, 
-
+    },
     details: {
         loanPayerDetails: {
             name: { type: String, required: true },
@@ -85,7 +91,6 @@ const userSchema = new mongoose.Schema({
         }
     }
 });
-
 
 userSchema.pre('save', async function(next) {
     try {
@@ -127,7 +132,8 @@ userSchema.pre('save', async function(next) {
                     totalEmiAmountRoundoff: roundedTotalEmiAmount,
                     overdueAmount: null,
                     overduePaid: null,
-                    overDueBalance: null
+                    overDueBalance: null,
+                    updatedBy: null // Set the user who created the loan as the updater of the initial installments
                 });
             }
 
@@ -138,10 +144,10 @@ userSchema.pre('save', async function(next) {
             const roundedTotalEmiBalance = Math.round(totalEmiAmount);
 
             // Set totalEmiAmount in the loanDetails
-            this.loanDetails.totalEmiAlreadyPaid = 0,
+            this.loanDetails.totalEmiAlreadyPaid = 0;
             this.loanDetails.totalEmiAmount = totalEmiAmount;
-            this.loanDetails.totalOverdueAmountToBePaid = null,
-            this.loanDetails.totalEmiAndOverdueToBePaid = null,
+            this.loanDetails.totalOverdueAmountToBePaid = null;
+            this.loanDetails.totalEmiAndOverdueToBePaid = null;
             this.loanDetails.totalEmiBalance = roundedTotalEmiBalance;
         }
         next(); // Call next to proceed with the save operation
