@@ -264,7 +264,6 @@ exports.getAllUsers = async (req, res) => {
     }
 };
 
-
 // exports.updateLoanPayer = async (req, res) => {
 //     const session = await UserModel.startSession();
 //     session.startTransaction();
