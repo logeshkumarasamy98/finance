@@ -34,26 +34,26 @@ app.use((req, res, next) => {
 
 // Define loan routes
 const loanRouter = express.Router();
-loanRouter.post('/', auth,  loanController.createUser);
-loanRouter.get('/:loanNumber', auth, loanController.getUsers);
-loanRouter.get('/', auth, loanController.getAllUsers);
-loanRouter.patch('/patch/:loanNumber', auth ,  loanController.updateLoanPayer);
+loanRouter.post('/',  loanController.createUser);
+loanRouter.get('/:loanNumber',  loanController.getUsers);
+loanRouter.get('/',  loanController.getAllUsers);
+loanRouter.patch('/patch/:loanNumber',   loanController.updateLoanPayer);
 
 // Define filter dashboard routes
 const filterDashboardRouter = express.Router();
-filterDashboardRouter.get('/activeLoanPayer',auth, filterDashboard.activeLoanPayer);
-filterDashboardRouter.get('/vehicleTypePercentage', auth, filterDashboard.vehicleTypePercentage);
-filterDashboardRouter.get('/LoanPayerDetails/:loanNumber',auth, filterDashboard.LoanPayerDetails);
-filterDashboardRouter.get('/getPendingEmiDetails', auth, filterDashboard.getPendingEmiDetails);
-filterDashboardRouter.get('/pendingEmiPayerLength',auth, filterDashboard.pendingEmiPayerLength);
-filterDashboardRouter.get('/ledgerDatas', auth,filterDashboard.ledgerDatas);
-filterDashboardRouter.get('/getOverDueUsers', auth,filterDashboard.getOverDueUsers);
+filterDashboardRouter.get('/activeLoanPayer', filterDashboard.activeLoanPayer);
+filterDashboardRouter.get('/vehicleTypePercentage',  filterDashboard.vehicleTypePercentage);
+filterDashboardRouter.get('/LoanPayerDetails/:loanNumber', filterDashboard.LoanPayerDetails);
+filterDashboardRouter.get('/getPendingEmiDetails',  filterDashboard.getPendingEmiDetails);
+filterDashboardRouter.get('/pendingEmiPayerLength', filterDashboard.pendingEmiPayerLength);
+filterDashboardRouter.get('/ledgerDatas', filterDashboard.ledgerDatas);
+filterDashboardRouter.get('/getOverDueUsers',filterDashboard.getOverDueUsers);
 filterDashboardRouter.get('/getOverDueLength', filterDashboard.getOverDueLength);
-filterDashboardRouter.get('/activeLoanPayerLength', auth,  filterDashboard.activeLoanPayerLength);
-filterDashboardRouter.get('/closedLoanPayer',auth, filterDashboard.closedLoanPayer);
-filterDashboardRouter.get('/closedLoanPayerLength',auth, filterDashboard.closedLoanPayerLength);
-filterDashboardRouter.get('/seizedLoanPayerLength',auth, filterDashboard.seizedLoanPayerLength);
-filterDashboardRouter.get('/seizedLoanPayer',auth, filterDashboard.seizedLoanPayer);
+filterDashboardRouter.get('/activeLoanPayerLength',  filterDashboard.activeLoanPayerLength);
+filterDashboardRouter.get('/closedLoanPayer', filterDashboard.closedLoanPayer);
+filterDashboardRouter.get('/closedLoanPayerLength', filterDashboard.closedLoanPayerLength);
+filterDashboardRouter.get('/seizedLoanPayerLength', filterDashboard.seizedLoanPayerLength);
+filterDashboardRouter.get('/seizedLoanPayer', filterDashboard.seizedLoanPayer);
 
 
 
@@ -70,8 +70,9 @@ app.post(('/ledger/investment'), ledgerController.investment)
 app.patch('/UpdatePrecloser/:loanNumber', precloserController.UpdatePrecloser)
 app.get('/calculate-pre-closer/:loanNumber', precloserController.calculate_pre_closer)
 // Mount routers
-app.use('/api/loan', loanRouter);
-app.use('/filter', filterDashboardRouter);
-app.use('/api', authRouter);
+app.use('/api/loan', auth, loanRouter);
+app.use('/filter', auth, filterDashboardRouter);
+app.use('/api',  authRouter);
+
 
 module.exports = app;
