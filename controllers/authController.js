@@ -82,7 +82,7 @@ exports.createUser =  async (req, res) => {
         // Send token in response
         // res.cookie('token', token, {httpOnly: true});
         res.cookie('token', token, {httpOnly: true});
-        res.status(200).json({ message: "Sign-in successful"});
+        res.status(200).json({ message: "Sign-in sucessful", token : token});
   
     } catch (error) {
         console.log(error)
