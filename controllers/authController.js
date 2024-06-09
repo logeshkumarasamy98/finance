@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const Company = require('./../model/company');
 const UserModel = require('./../model/authModel');
+const {updateOverdueInstallments} = require('../customFunctions/overDueCalculator')
+
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 // const cookieParser = require('cookie-parser');
@@ -83,6 +85,8 @@ exports.createUser =  async (req, res) => {
         // res.cookie('token', token, {httpOnly: true});
         res.cookie('token', token, {httpOnly: true});
         res.status(200).json({ message: "Sign-in sucessful", token : token});
+        await updateOverdueInstallments();
+
   
     } catch (error) {
         console.log(error)
