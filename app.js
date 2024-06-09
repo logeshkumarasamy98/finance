@@ -23,6 +23,13 @@ app.use(express.json());
 app.use(cookieParser());
 
 
+const corsOptions = {
+    origin: 'http://localhost:3001', // The client origin
+    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+  };
+  
+  app.use(cors(corsOptions));
+
 // app.get(('/filter/ledgerDatas'), filterDashboard.ledgerDatas );
 // CORS setup
 app.use((req, res, next) => {
