@@ -16,7 +16,15 @@ const jwt = require('jsonwebtoken');
 const Company = require('./model/company');
 const cookieParser = require('cookie-parser');
 
-app.use(cors());
+// app.use(cors());
+
+const corsOptions = {
+  origin: 'http://localhost:3001', // The client origin
+  credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+};
+
+app.use(cors(corsOptions));
+
 
 app.use(express.json()); 
 
