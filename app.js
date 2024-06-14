@@ -47,6 +47,7 @@ filterDashboardRouter.get('/closedLoanPayer', filterDashboard.closedLoanPayer);
 filterDashboardRouter.get('/closedLoanPayerLength', filterDashboard.closedLoanPayerLength);
 filterDashboardRouter.get('/seizedLoanPayerLength', filterDashboard.seizedLoanPayerLength);
 filterDashboardRouter.get('/seizedLoanPayer', filterDashboard.seizedLoanPayer);
+filterDashboardRouter.get('/downloadPendingEmiDetails', filterDashboard.downloadPendingEmiDetails);
 
 // Define auth routes
 const authRouter = express.Router();

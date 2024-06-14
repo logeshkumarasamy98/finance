@@ -511,6 +511,7 @@
 
 const ledgerModel = require('../model/ledgerModel');
 const loanModel = require('../model/loanModel');
+const xlsx = require('xlsx');
 
 exports.activeLoanPayer = async (req, res) => {
     const companyId = req.companyId;
@@ -961,6 +962,78 @@ exports.getOverDueLength = async (req, res) => {
             status: 'Success',
             length: pendingEmiDetails.length
         });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+
+exports.downloadPendingEmiDetails = async (req, res) => {
+    const companyId = req.companyId;
+    try {
+        let pendingEmiDetails = await loanModel.aggregate([
+            { $match: { "loanDetails.emiPending": true } },
+            {
+                $lookup: {
+                    from: "usermodels",
+                    localField: "details.loanPayerDetails.name",
+                    foreignField: "details.loanPayerDetails.name",
+                    as: "user"
+                }
+            },
+            { $unwind: "$loanDetails.instalmentObject" },
+            {
+                $match: {
+                    "loanDetails.instalmentObject.isPaid": false,
+                    "loanDetails.instalmentObject.dueDate": { $lte: new Date() }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        loanNumber: "$loanNumber",
+                        loanPayerName: "$details.loanPayerDetails.name",
+                        phoneNumber1: "$details.loanPayerDetails.mobileNum1",
+                        pendingEmiNum: "$loanDetails.pendingEmiNum",
+                        emiPendingDate: "$loanDetails.emiPendingDate",
+                        totalEmiAmountRoundoff: "$loanDetails.instalmentObject.totalEmiAmountRoundoff",
+                        company: "$company"
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    loanNumber: "$_id.loanNumber",
+                    loanPayerName: "$_id.loanPayerName",
+                    phoneNumber1: "$_id.phoneNumber1",
+                    pendingEmiNum: "$_id.pendingEmiNum",
+                    emiPendingDate: "$_id.emiPendingDate",
+                    totalEmiAmountRoundoff: "$_id.totalEmiAmountRoundoff",
+                    company: "$_id.company"
+                }
+            },
+            { $sort: { "emiPendingDate": 1 } }
+        ]);
+
+        // Filter pendingEmiDetails by companyId
+        pendingEmiDetails = pendingEmiDetails.filter(user => user.company && user.company.toString() === companyId);
+
+        // Create a new workbook and worksheet
+        const workbook = xlsx.utils.book_new();
+        const worksheet = xlsx.utils.json_to_sheet(pendingEmiDetails);
+
+        // Append the worksheet to the workbook
+        xlsx.utils.book_append_sheet(workbook, worksheet, 'Pending EMI Details');
+
+        // Write the workbook to a buffer
+        const buffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+        // Set headers and send the buffer as a file
+        res.setHeader('Content-Disposition', 'attachment; filename=pending_emi_details.xlsx');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.send(buffer);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
