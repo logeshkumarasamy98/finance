@@ -866,13 +866,12 @@ exports.getPendingEmiDetails = async (req, res) => {
     }
 };
 
-
 exports.ledgerDatas = (req, res) => {
     const companyId = req.companyId;
     const params = req.query;
 
     const constructFilterOptions = (params) => {
-        const filterOptions = { companyId };
+        const filterOptions = { company: companyId }; // Filter by companyId
 
         if (params.startDate && params.endDate) {
             const startDate = new Date(params.startDate);
@@ -880,27 +879,32 @@ exports.ledgerDatas = (req, res) => {
             filterOptions.entryDate = { $gte: startDate, $lte: endDate };
         } else if (params.startDate) {
             const startDate = new Date(params.startDate);
-            const endDate = new Date(params.startDate);
+            const endDate = new Date(startDate);
             endDate.setHours(23, 59, 59, 999);
             filterOptions.entryDate = { $gte: startDate, $lte: endDate };
         } else if (params.endDate) {
             const endDate = new Date(params.endDate);
+            endDate.setHours(23, 59, 59, 999);
             filterOptions.entryDate = { $lte: endDate };
         }
 
         const orConditions = [];
-        if (params.hasOwnProperty('isExpense')) {
-            orConditions.push({ isExpense: params.isExpense });
+
+        // Add conditions based on params.isExpense, params.isInvestment, etc.
+        if (params.hasOwnProperty('isExpense') && params.isExpense === 'true') {
+            orConditions.push({ isExpense: true });
         }
-        if (params.hasOwnProperty('isInvestment')) {
-            orConditions.push({ isInvestment: params.isInvestment });
+        if (params.hasOwnProperty('isInvestment') && params.isInvestment === 'true') {
+            orConditions.push({ isInvestment: true });
         }
-        if (params.hasOwnProperty('isLoanDebit')) {
-            orConditions.push({ isLoanDebit: params.isLoanDebit });
+        if (params.hasOwnProperty('isLoanDebit') && params.isLoanDebit === 'true') {
+            orConditions.push({ isLoanDebit: true });
         }
-        if (params.hasOwnProperty('isLoanCredit')) {
-            orConditions.push({ isLoanCredit: params.isLoanCredit });
+        if (params.hasOwnProperty('isLoanCredit') && params.isLoanCredit === 'true') {
+            orConditions.push({ isLoanCredit: true });
         }
+
+        // Apply $or condition if there are any
         if (orConditions.length > 0) {
             filterOptions.$or = orConditions;
         }
@@ -913,13 +917,69 @@ exports.ledgerDatas = (req, res) => {
     ledgerModel.find(filterOptions)
         .sort({ entryDate: -1 })
         .then(results => {
-            res.json({ results });
+            const length = results.length; // Get the length of results array
+            res.json({ results, length }); // Return results and length
         })
         .catch(err => {
             console.error('Error:', err);
             res.status(500).send('Internal Server Error');
         });
 };
+
+
+// exports.ledgerDatas = (req, res) => {
+//     const companyId = req.companyId;
+//     const params = req.query;
+
+//     const constructFilterOptions = (params) => {
+//         const filterOptions = { companyId };
+
+//         if (params.startDate && params.endDate) {
+//             const startDate = new Date(params.startDate);
+//             const endDate = new Date(params.endDate);
+//             filterOptions.entryDate = { $gte: startDate, $lte: endDate };
+//         } else if (params.startDate) {
+//             const startDate = new Date(params.startDate);
+//             const endDate = new Date(params.startDate);
+//             endDate.setHours(23, 59, 59, 999);
+//             filterOptions.entryDate = { $gte: startDate, $lte: endDate };
+//         } else if (params.endDate) {
+//             const endDate = new Date(params.endDate);
+//             filterOptions.entryDate = { $lte: endDate };
+//         }
+
+//         const orConditions = [];
+//         if (params.hasOwnProperty('isExpense')) {
+//             orConditions.push({ isExpense: params.isExpense });
+//         }
+//         if (params.hasOwnProperty('isInvestment')) {
+//             orConditions.push({ isInvestment: params.isInvestment });
+//         }
+//         if (params.hasOwnProperty('isLoanDebit')) {
+//             orConditions.push({ isLoanDebit: params.isLoanDebit });
+//         }
+//         if (params.hasOwnProperty('isLoanCredit')) {
+//             orConditions.push({ isLoanCredit: params.isLoanCredit });
+//         }
+//         if (orConditions.length > 0) {
+//             filterOptions.$or = orConditions;
+//         }
+
+//         return filterOptions;
+//     };
+
+//     const filterOptions = constructFilterOptions(params);
+
+//     ledgerModel.find(filterOptions)
+//         .sort({ entryDate: -1 })
+//         .then(results => {
+//             res.json({ results });
+//         })
+//         .catch(err => {
+//             console.error('Error:', err);
+//             res.status(500).send('Internal Server Error');
+//         });
+// };
 
 exports.getOverDueUsers = async (req, res) => {
     const companyId = req.companyId;
