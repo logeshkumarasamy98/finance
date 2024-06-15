@@ -175,7 +175,7 @@ exports.createUser = async (req, res) => {
         await user.save({ session });
 
         // Call updateOverdueInstallmentsForOne with the new loan number
-        await updateOverdueInstallmentsForOne(newLoanNumber, session);
+        // await updateOverdueInstallmentsForOne(newLoanNumber, session);
 
         // Creating ledger entry
         const ledgerEntry = new ledgerModel({
@@ -197,7 +197,7 @@ exports.createUser = async (req, res) => {
 
         // Call updateLoanDetails with the new loan number
         await updateLoanDetails(newLoanNumber);
-
+        await updateOverdueInstallmentsForOne(newLoanNumber);
         // Send response
         res.status(201).json({ status: 'success', message: 'User created successfully', user });
     } catch (err) {

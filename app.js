@@ -55,8 +55,8 @@ authRouter.post('/signin', authController.signIn);
 authRouter.post('/createUser', authController.createUser);
 authRouter.post('/createCompany', authController.createCompany);
 
-app.post('/ledger/expense', ledgerController.expense);
-app.post('/ledger/investment', ledgerController.investment);
+app.post('/ledger/expense', auth, ledgerController.expense);
+app.post('/ledger/investment', auth, ledgerController.investment);
 
 app.patch('/UpdatePrecloser/:loanNumber', precloserController.UpdatePrecloser);
 app.get('/calculate-pre-closer/:loanNumber', precloserController.calculate_pre_closer);

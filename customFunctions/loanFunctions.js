@@ -95,6 +95,8 @@ async function updateLoanDetails(loanNumber) {
 
 async function updateOverdueInstallmentsForOne(loanNumber) {
     try {
+
+        console.log("updateOverdueInstallmentsForOne started")
         const currentDate = new Date();
         // Find the user with the given loan number
         const user = await UserModel.findOne({ loanNumber });
@@ -110,6 +112,7 @@ async function updateOverdueInstallmentsForOne(loanNumber) {
         
         // Calculate the number of pending EMIs
         const pendingEmiCount = overdueInstallments.length;
+        console.log("pendingEmiCount", pendingEmiCount)
 
         if (overdueInstallments.length > 0) {
             user.loanDetails.emiPending = true;

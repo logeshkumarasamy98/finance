@@ -876,15 +876,16 @@ exports.ledgerDatas = (req, res) => {
         if (params.startDate && params.endDate) {
             const startDate = new Date(params.startDate);
             const endDate = new Date(params.endDate);
+            endDate.setHours(23, 59, 59, 999); // Ensure endDate includes the entire day
             filterOptions.entryDate = { $gte: startDate, $lte: endDate };
         } else if (params.startDate) {
             const startDate = new Date(params.startDate);
             const endDate = new Date(startDate);
-            endDate.setHours(23, 59, 59, 999);
+            endDate.setHours(23, 59, 59, 999); // Ensure endDate includes the entire day
             filterOptions.entryDate = { $gte: startDate, $lte: endDate };
         } else if (params.endDate) {
             const endDate = new Date(params.endDate);
-            endDate.setHours(23, 59, 59, 999);
+            endDate.setHours(23, 59, 59, 999); // Ensure endDate includes the entire day
             filterOptions.entryDate = { $lte: endDate };
         }
 
@@ -925,6 +926,7 @@ exports.ledgerDatas = (req, res) => {
             res.status(500).send('Internal Server Error');
         });
 };
+
 
 
 // exports.ledgerDatas = (req, res) => {

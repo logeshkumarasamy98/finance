@@ -5,26 +5,22 @@ exports.expense = async (req, res) => {
     session.startTransaction();
     try {
         const { paymentMethod, remarks, total } = req.body;
-        const entryDate = req.body.entryDate || new Date(); // Use provided entry date or current date if not provided
-        const companyId = req.companyId; // Assuming companyId is available in the request object
+        const entryDate = req.body.entryDate || new Date();
+        const companyId = req.companyId;
         const userId = req.userId;
-        // Update isExpense field based on conditions
         const isExpense = true;
 
-        // Create a new ledger entry
         const newEntry = new ledgerModel({
             paymentMethod,
             remarks,
             total,
             isExpense,
-            creditOrDebit: 'Debit', // Always set creditOrDebit as "Debit"
+            creditOrDebit: 'Debit',
             entryDate,
-            createdBy: userId, // Set the createdBy field to the userId
+            createdBy: userId,
             company: companyId
-            // Add other fields as needed
         });
 
-        // Save the new entry to the database
         await newEntry.save({ session });
 
         await session.commitTransaction();
@@ -38,8 +34,6 @@ exports.expense = async (req, res) => {
         res.status(500).json({ success: false, message: 'Internal server error.' });
     }
 };
-
-
 
 exports.investment = async (req, res) => {
     const session = await ledgerModel.startSession();
