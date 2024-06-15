@@ -91,7 +91,6 @@ const UserModel = require('../model/loanModel');
 
 async function updateOverdueInstallments() {
     try {
-        console.log('test...123');
         const currentDate = new Date();
         const overdueInstallments = await UserModel.find({
             'loanDetails.instalmentObject': {
@@ -105,14 +104,16 @@ async function updateOverdueInstallments() {
         });
 
         for (const user of overdueInstallments) {
-            // Calculate the sum of all EMIs that need to be paid
-            const overdueInstallments = user.loanDetails.instalmentObject.filter(installment => !installment.isPaid && installment.dueDate < currentDate);
-            const totalPendingEmiAmount = overdueInstallments.reduce((sum, installment) => sum + installment.totalEmiAmountRoundoff, 0);
+            // Filter overdue and unpaid installments
+            const overdueInstallmentsFiltered = user.loanDetails.instalmentObject.filter(installment => !installment.isPaid && installment.dueDate < currentDate);
+            
+            // Calculate the number of pending EMIs
+            const pendingEmiCount = overdueInstallmentsFiltered.length;
 
-            if (overdueInstallments.length > 0) {
+            if (overdueInstallmentsFiltered.length > 0) {
                 user.loanDetails.emiPending = true;
-                user.loanDetails.pendingEmiNum = totalPendingEmiAmount;
-                user.loanDetails.emiPendingDate = overdueInstallments[0].dueDate; // Keep the date of the first unpaid installment
+                user.loanDetails.pendingEmiNum = pendingEmiCount; // Set pendingEmiNum to the number of pending EMIs
+                user.loanDetails.emiPendingDate = overdueInstallmentsFiltered[0].dueDate; // Keep the date of the first unpaid installment
             } else {
                 // Check if any installment has isPaid true and due date less than current date
                 const anyPaidInstallment = user.loanDetails.instalmentObject.find(installment => installment.isPaid && installment.dueDate < currentDate);
@@ -122,6 +123,15 @@ async function updateOverdueInstallments() {
                     user.loanDetails.emiPendingDate = null;
                 }
             }
+
+            // Calculate totalOverdueAmountToBePaid
+            const totalOverdueAmountToBePaid = user.loanDetails.instalmentObject.reduce((total, installment) => {
+                return total + (installment.overDueBalance || 0); // Use 0 if overDueBalance is undefined
+            }, 0);
+
+            // Set totalOverdueAmountToBePaid in user details
+            user.loanDetails.totalOverdueAmountToBePaid = totalOverdueAmountToBePaid;
+
             await user.save(); // Use await to ensure save operation completes before moving on
         }
 
@@ -130,4 +140,5 @@ async function updateOverdueInstallments() {
         console.error('Error updating overdue installments:', error);
     }
 }
-  module.exports = { updateOverdueInstallments };
+
+module.exports = { updateOverdueInstallments };

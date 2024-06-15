@@ -836,9 +836,11 @@ exports.getPendingEmiDetails = async (req, res) => {
                         phoneNumber1: "$details.loanPayerDetails.mobileNum1",
                         pendingEmiNum: "$loanDetails.pendingEmiNum",
                         emiPendingDate: "$loanDetails.emiPendingDate",
-                        totalEmiAmountRoundoff: "$loanDetails.instalmentObject.totalEmiAmountRoundoff",
                         company: "$company"
-                    }
+                    },
+                    totalPrincipalAmount: { $sum: "$loanDetails.instalmentObject.principleAmountPerMonth" },
+                    totalInterestAmount: { $sum: "$loanDetails.instalmentObject.interestAmount" },
+                    totalEmiAmount: { $sum: "$loanDetails.instalmentObject.totalEmiAmountRoundoff" }
                 }
             },
             {
@@ -849,11 +851,13 @@ exports.getPendingEmiDetails = async (req, res) => {
                     phoneNumber1: "$_id.phoneNumber1",
                     pendingEmiNum: "$_id.pendingEmiNum",
                     emiPendingDate: "$_id.emiPendingDate",
-                    totalEmiAmountRoundoff: "$_id.totalEmiAmountRoundoff",
+                    totalPrincipalAmount: 1,
+                    totalInterestAmount: 1,
+                    totalEmiAmount: 1,
                     company: "$_id.company"
                 }
             },
-            { $sort: { "emiPendingDate": 1 } }
+            { $sort: { pendingEmiNum: -1, emiPendingDate: 1 } }
         ]);
 
         // Filter pendingEmiDetails by companyId
