@@ -870,6 +870,11 @@ exports.getPendingEmiDetails = async (req, res) => {
     }
 };
 
+const parseDate = (dateStr) => {
+    const [day, month, year] = dateStr.split('/');
+    return new Date(`${year}-${month}-${day}`);
+};
+
 exports.ledgerDatas = (req, res) => {
     const companyId = req.companyId;
     const params = req.query;
@@ -878,17 +883,17 @@ exports.ledgerDatas = (req, res) => {
         const filterOptions = { company: companyId }; // Filter by companyId
 
         if (params.startDate && params.endDate) {
-            const startDate = new Date(params.startDate);
-            const endDate = new Date(params.endDate);
+            const startDate = parseDate(params.startDate);
+            const endDate = parseDate(params.endDate);
             endDate.setHours(23, 59, 59, 999); // Ensure endDate includes the entire day
             filterOptions.entryDate = { $gte: startDate, $lte: endDate };
         } else if (params.startDate) {
-            const startDate = new Date(params.startDate);
+            const startDate = parseDate(params.startDate);
             const endDate = new Date(startDate);
             endDate.setHours(23, 59, 59, 999); // Ensure endDate includes the entire day
             filterOptions.entryDate = { $gte: startDate, $lte: endDate };
         } else if (params.endDate) {
-            const endDate = new Date(params.endDate);
+            const endDate = parseDate(params.endDate);
             endDate.setHours(23, 59, 59, 999); // Ensure endDate includes the entire day
             filterOptions.entryDate = { $lte: endDate };
         }
