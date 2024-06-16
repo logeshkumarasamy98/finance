@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
+const cookieParser = require('cookie-parser');
+
 const UserModel = require('./model/authModel');
 const loanController = require('./controllers/loanController');
 const ledgerController = require('./controllers/ledgerController');
@@ -13,7 +15,6 @@ const { updateLoanDetails } = require('./customFunctions/loanFunctions');
 const ledgerModel = require('./model/ledgerModel');
 const jwt = require('jsonwebtoken');
 const Company = require('./model/company');
-const cookieParser = require('cookie-parser');
 
 // CORS options
 const corsOptions = {
