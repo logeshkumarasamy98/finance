@@ -575,7 +575,7 @@ exports.updateLoanPayer = async (req, res) => {
 
         // Get user's name from loanPayerDetails
         const remarks = user.details.loanPayerDetails.name;
-        const total = Number(installmentObject.totalEmiAmountRoundoff) + Number(overdueAmount);
+        const total = Number(installmentObject.totalEmiAmountRoundoff) + Number(overduePaid);
         
         // Creating ledger entry
         const ledgerEntry = new ledgerModel({
