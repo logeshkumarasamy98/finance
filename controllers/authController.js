@@ -36,26 +36,65 @@ exports.createUser = async (req, res) => {
     }
 };
 
+// exports.signIn = async (req, res) => {
+//     try {
+//         const { email, password } = req.body;
+
+//         if (!email || !password) {
+//             return res.status(400).send({ error: 'Email and password are required' });
+//         }
+
+//         const user = await UserModel.findOne({ email }).populate('companies');
+//         if (!user || user.password !== password) {
+//             return res.status(401).send({ error: 'Invalid email or password' });
+//         }
+
+//         const companyId = user.companies.length > 0 ? user.companies[0]._id : null;
+//         const token = jwt.sign({ userId: user._id, role: user.role, companyId }, JWT_SECRET, { expiresIn: '1h' });
+
+//         res.cookie('token', token, { httpOnly: true });
+//         res.status(200).json({ message: "Sign-in successful", token: token });
+//         await updateOverdueInstallments();
+//     } catch (error) {
+//         res.status(400).send({ error: 'An error occurred while signing in' });
+//     }
+// };
+
+
 exports.signIn = async (req, res) => {
-    try {
-        const { email, password } = req.body;
+  try {
+      const { email, password } = req.body;
 
-        if (!email || !password) {
-            return res.status(400).send({ error: 'Email and password are required' });
-        }
+      if (!email || !password) {
+          return res.status(400).send({ error: 'Email and password are required' });
+      }
 
-        const user = await UserModel.findOne({ email }).populate('companies');
-        if (!user || user.password !== password) {
-            return res.status(401).send({ error: 'Invalid email or password' });
-        }
+      const user = await UserModel.findOne({ email }).populate('companies');
+      if (!user || user.password !== password) {
+          return res.status(401).send({ error: 'Invalid email or password' });
+      }
 
-        const companyId = user.companies.length > 0 ? user.companies[0]._id : null;
-        const token = jwt.sign({ userId: user._id, role: user.role, companyId }, JWT_SECRET, { expiresIn: '1h' });
+      // Assuming the user has at least one company associated
+      const companyId = user.companies.length > 0 ? user.companies[0]._id : null;
+      
+      // Fetch company details based on companyId
+      const company = await Company.findById(companyId);
 
-        res.cookie('token', token, { httpOnly: true });
-        res.status(200).json({ message: "Sign-in successful", token: token });
-        await updateOverdueInstallments();
-    } catch (error) {
-        res.status(400).send({ error: 'An error occurred while signing in' });
-    }
+      if (!company) {
+          return res.status(404).send({ error: 'Company details not found' });
+      }
+
+      const token = jwt.sign({ userId: user._id, role: user.role, companyId }, JWT_SECRET, { expiresIn: '1h' });
+
+      res.cookie('token', token, { httpOnly: true });
+
+      // Send companyName and companyAddress in the response
+      res.status(200).json({ message: "Sign-in successful", token: token, companyName: company.name, companyAddress: company.address });
+
+      // Assuming updateOverdueInstallments is an asynchronous function that does not need to wait for a response
+      await updateOverdueInstallments();
+  } catch (error) {
+      console.error(error);
+      res.status(400).send({ error: 'An error occurred while signing in' });
+  }
 };
