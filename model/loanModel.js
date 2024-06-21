@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-    loanNumber: { type: Number},
+    loanNumber: { type: Number },
     debitReceiptNumber: { type: String, require: true },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
@@ -55,7 +55,8 @@ const userSchema = new mongoose.Schema({
             preCloserPrincipleAmount: { type: Number, default: null },
             preCloserInterestAmount: { type: Number, default: null },
             preCloserOverDue: { type: Number, default: null }
-        }
+        },
+        loanExtraPaid: { type: Number, default: 0 } // New field added
     },
     details: {
         loanPayerDetails: {
@@ -91,71 +92,6 @@ const userSchema = new mongoose.Schema({
         }
     }
 });
-
-// userSchema.pre('save', async function(next) {
-//     try {
-//         if (this.isNew && this.loanDetails.instalment && this.loanDetails.instalmentObject.length === 0) {
-//             const { instalment, startDate, totalPrincipalAmount, interestRate } = this.loanDetails;
-//             const monthlyInterestRate = interestRate / 100; // Convert annual interest rate to monthly rate
-
-//             let monthlyPrincipal = totalPrincipalAmount / instalment;
-//             let totalLoan = totalPrincipalAmount;
-
-//             for (let i = 1; i <= instalment; i++) {
-//                 let currentDate = new Date(startDate); // Create a new Date object for each iteration
-//                 currentDate.setMonth(currentDate.getMonth() + i); // Increment month by i
-                
-//                 const monthlyInterestAmount = totalLoan * monthlyInterestRate;
-//                 const monthlyTotalAmount = monthlyInterestAmount + monthlyPrincipal;
-
-//                 // Custom rounding function to round off to the next 5
-//                 const roundToNext5 = (num) => Math.ceil(num / 5) * 5;
-
-//                 // Round off monthlyPrincipal and monthlyInterestAmount to the next 5
-//                 monthlyPrincipal = roundToNext5(monthlyPrincipal);
-//                 const roundedMonthlyInterestAmount = roundToNext5(monthlyInterestAmount);
-
-//                 // const monthlyTotalAmount = monthlyPrincipal + roundedMonthlyInterestAmount
-
-//                 const roundedTotalEmiAmount = (monthlyPrincipal + roundedMonthlyInterestAmount); // Round off to nearest 10-digit number
-
-//                 this.loanDetails.instalmentObject.push({
-//                     installmentNo: i,
-//                     isPaid: false,
-//                     dueDate: currentDate,
-//                     paidDate: null,
-//                     emiPaid: null,
-//                     receiptNumber: null,
-//                     principleAmountPerMonth: monthlyPrincipal,
-//                     interestAmount: roundedMonthlyInterestAmount,
-//                     totalEmiAmount: monthlyTotalAmount,
-//                     totalEmiAmountRoundoff: roundedTotalEmiAmount,
-//                     overdueAmount: null,
-//                     overduePaid: null,
-//                     overDueBalance: null,
-//                     updatedBy: null // Set the user who created the loan as the updater of the initial installments
-//                 });
-//             }
-
-//             // Calculate totalEmiAmount after all installment objects have been added
-//             const totalEmiAmount = this.loanDetails.instalmentObject.reduce((total, installment) => {
-//                 return total + installment.totalEmiAmount;
-//             }, 0);
-//             const roundedTotalEmiBalance = Math.round(totalEmiAmount);
-
-//             // Set totalEmiAmount in the loanDetails
-//             this.loanDetails.totalEmiAlreadyPaid = 0;
-//             this.loanDetails.totalEmiAmount = totalEmiAmount;
-//             this.loanDetails.totalOverdueAmountToBePaid = null;
-//             this.loanDetails.totalEmiAndOverdueToBePaid = null;
-//             this.loanDetails.totalEmiBalance = roundedTotalEmiBalance;
-//         }
-//         next(); // Call next to proceed with the save operation
-//     } catch (error) {
-//         next(error); // Pass any errors to the error handling middleware
-//     }
-// });
-
 
 userSchema.pre('save', async function(next) {
     try {
@@ -217,7 +153,6 @@ userSchema.pre('save', async function(next) {
         next(error); // Pass any errors to the error handling middleware
     }
 });
-
 
 const UserModel = mongoose.model('Loan', userSchema);
 

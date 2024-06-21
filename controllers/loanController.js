@@ -507,6 +507,123 @@ exports.getAllUsers = async (req, res) => {
 
 
 
+// 512 is proper code
+
+// exports.updateLoanPayer = async (req, res) => {
+//     try {
+//         const { installmentNo, emiPaid, overdueAmount, overduePaid, paidDate } = req.body;
+//         const companyId = req.companyId; // Assuming companyId is available in the request object
+//         const userId = req.userId; // Assuming userId is available in the request object
+
+//         // Find the user by loanNumber and company
+//         const user = await loanModel.findOne({ loanNumber: req.params.loanNumber, company: companyId });
+
+//         // Check if user is found
+//         if (!user) {
+//             return res.status(404).json({ error: 'User not found with the provided loan number for the specified company' });
+//         }
+
+//         // Find the highest receipt number across all loan numbers for the company
+//         const highestReceiptEntry = await ledgerModel.findOne({ company: companyId }).sort({ receiptNumberHid: -1 }); // Sort by receiptNumberHid
+
+//         let newReceiptNumberHid = 1; // Default value if no entries found
+//         if (highestReceiptEntry) {
+//             // If entry exists, increment the last used receipt number hid by one
+//             newReceiptNumberHid = highestReceiptEntry.receiptNumberHid + 1;
+//         }
+
+//         // Find the installment object that matches the installment number
+//         const installmentObject = user.loanDetails.instalmentObject.find(installment => installment.installmentNo === installmentNo);
+
+//         // Check if installment is already paid
+//         if (installmentObject.isPaid) {
+//             return res.status(400).json({ error: 'Installment is already paid' });
+//         }
+
+//         // If emiPaid is not equal to totalEmiAmountRoundoff, return an error
+//         if (emiPaid !== installmentObject.totalEmiAmountRoundoff) {
+//             return res.status(400).json({ error: 'emiPaid should be equal to totalEmiAmountRoundoff for this installment' });
+//         }
+
+//         // Update installment object properties
+//         installmentObject.emiPaid = emiPaid;
+//         installmentObject.isPaid = true; // Set isPaid to true since emiPaid equals totalEmiAmountRoundoff
+//         installmentObject.updatedBy = userId; // Add updatedBy field with userId
+
+//         // Update overdueAmount and overduePaid
+//         installmentObject.overdueAmount = overdueAmount;
+//         installmentObject.overduePaid = overduePaid;
+//         // Calculate overDueBalance
+//         const overDueBalance = overdueAmount - overduePaid;
+//         installmentObject.overDueBalance = overDueBalance;
+
+//         // Patch receipt number
+//         const receiptNumber = `C-${newReceiptNumberHid}`;
+//         installmentObject.receiptNumber = receiptNumber;
+
+//         if (paidDate) {
+//             installmentObject.paidDate = paidDate;
+//         }
+
+//         await user.save();
+//         await updateLoanDetails(req.params.loanNumber);
+//         await updateOverdueInstallmentsForOne(req.params.loanNumber);
+//         await updateLoanStatus(req.params.loanNumber);
+
+//         // Get user's name, address, and mobile number from loanPayerDetails
+//         const { name, mobileNum1, address, pincode } = user.details.loanPayerDetails;
+
+//         // Get user's name from loanPayerDetails
+//         const remarks = user.details.loanPayerDetails.name;
+//         const total = Number(installmentObject.totalEmiAmountRoundoff) + Number(overduePaid);
+        
+//         // Creating ledger entry
+//         const ledgerEntry = new ledgerModel({
+//             isLoanCredit: true, // Credit entry
+//             loanNumber: req.params.loanNumber,
+//             receiptNumber, // Construct receiptNumber with "C-" prefix
+//             receiptNumberHid: newReceiptNumberHid, // Update receiptNumberHid
+//             remarks,
+//             principle: installmentObject.principleAmountPerMonth,
+//             interest: installmentObject.interestAmount,
+//             overDue: overduePaid,
+//             total,
+//             creditOrDebit: 'Credit',
+//             paymentMethod: req.body.paymentMethod,
+//             createdBy: req.userId, // Set the createdBy field to the userId
+//             company: companyId // Ensure the ledger entry is associated with the correct company
+//         });
+//         await ledgerEntry.save();
+//         const company = await companyModel.findById(companyId);
+
+//         // Fetch the user details who created the entry
+//         const createdByUser = await userModel.findById(userId);
+//         const installmentDetails = {
+//             loanNumber: user.loanNumber,
+//             installmentNo: installmentObject.installmentNo,
+//             interestAmount: installmentObject.interestAmount,
+//             principleAmountPerMonth: installmentObject.principleAmountPerMonth,
+//             totalPrincipalAmount: user.loanDetails.totalPrincipalAmount,
+//             overdueAmount: installmentObject.overdueAmount,
+//             overduePaid: installmentObject.overduePaid,
+//             overDueBalance: installmentObject.overDueBalance,
+//             receiptNumber,
+//             paidDate: installmentObject.paidDate,
+//             dueDate: installmentObject.dueDate,
+//             name,
+//             mobileNum1,
+//             address,
+//             pincode,
+//             company: company.name, // Access company's name directly
+//             createdBy: createdByUser.name
+//         };
+
+//         res.status(200).json({ message: 'Loan payer updated successfully', installmentDetails });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ error: 'Internal server error' });
+//     }
+// };
 
 
 exports.updateLoanPayer = async (req, res) => {
@@ -540,9 +657,12 @@ exports.updateLoanPayer = async (req, res) => {
             return res.status(400).json({ error: 'Installment is already paid' });
         }
 
-        // If emiPaid is not equal to totalEmiAmountRoundoff, return an error
+        // If emiPaid is not equal to totalEmiAmountRoundoff, check if extra emiPaid exists
         if (emiPaid !== installmentObject.totalEmiAmountRoundoff) {
-            return res.status(400).json({ error: 'emiPaid should be equal to totalEmiAmountRoundoff for this installment' });
+            const extraEmiPaid = emiPaid - installmentObject.totalEmiAmountRoundoff;
+            
+            // Save extraEmiPaid to loanExtraPaid field
+            user.loanDetails.loanExtraPaid += extraEmiPaid;
         }
 
         // Update installment object properties
