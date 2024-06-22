@@ -628,7 +628,14 @@ exports.getAllUsers = async (req, res) => {
 
 exports.updateLoanPayer = async (req, res) => {
     try {
-        const { installmentNo, emiPaid, overdueAmount, overduePaid, paidDate } = req.body;
+        const {
+            installmentNo,
+            emiPaid,
+            overdueAmount,
+            overduePaid,
+            paidDate,
+            principleAmountPaid
+        } = req.body;
         const companyId = req.companyId; // Assuming companyId is available in the request object
         const userId = req.userId; // Assuming userId is available in the request object
 
@@ -641,7 +648,7 @@ exports.updateLoanPayer = async (req, res) => {
         }
 
         // Find the highest receipt number across all loan numbers for the company
-        const highestReceiptEntry = await ledgerModel.findOne({ company: companyId }).sort({ receiptNumberHid: -1 }); // Sort by receiptNumberHid
+        const highestReceiptEntry = await ledgerModel.findOne({ company: companyId }).sort({ receiptNumberHid: -1 });
 
         let newReceiptNumberHid = 1; // Default value if no entries found
         if (highestReceiptEntry) {
@@ -657,17 +664,16 @@ exports.updateLoanPayer = async (req, res) => {
             return res.status(400).json({ error: 'Installment is already paid' });
         }
 
-        // If emiPaid is not equal to totalEmiAmountRoundoff, check if extra emiPaid exists
+        // Update extra EMI paid if any
         if (emiPaid !== installmentObject.totalEmiAmountRoundoff) {
             const extraEmiPaid = emiPaid - installmentObject.totalEmiAmountRoundoff;
-            
-            // Save extraEmiPaid to loanExtraPaid field
             user.loanDetails.loanExtraPaid += extraEmiPaid;
         }
 
         // Update installment object properties
         installmentObject.emiPaid = emiPaid;
         installmentObject.isPaid = true; // Set isPaid to true since emiPaid equals totalEmiAmountRoundoff
+        installmentObject.principleAmountPaid = principleAmountPaid; // Set principleAmountPaid from request body
         installmentObject.updatedBy = userId; // Add updatedBy field with userId
 
         // Update overdueAmount and overduePaid
@@ -692,11 +698,9 @@ exports.updateLoanPayer = async (req, res) => {
 
         // Get user's name, address, and mobile number from loanPayerDetails
         const { name, mobileNum1, address, pincode } = user.details.loanPayerDetails;
-
-        // Get user's name from loanPayerDetails
-        const remarks = user.details.loanPayerDetails.name;
+        const remarks = name; // Use user's name for remarks
         const total = Number(installmentObject.totalEmiAmountRoundoff) + Number(overduePaid);
-        
+
         // Creating ledger entry
         const ledgerEntry = new ledgerModel({
             isLoanCredit: true, // Credit entry
@@ -723,6 +727,7 @@ exports.updateLoanPayer = async (req, res) => {
             installmentNo: installmentObject.installmentNo,
             interestAmount: installmentObject.interestAmount,
             principleAmountPerMonth: installmentObject.principleAmountPerMonth,
+            principleAmountPaid: installmentObject.principleAmountPaid, // Include principleAmountPaid in response
             totalPrincipalAmount: user.loanDetails.totalPrincipalAmount,
             overdueAmount: installmentObject.overdueAmount,
             overduePaid: installmentObject.overduePaid,

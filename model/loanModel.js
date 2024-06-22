@@ -27,6 +27,7 @@ const userSchema = new mongoose.Schema({
             dueDate: { type: Date, required: true },
             paidDate: { type: Date },
             emiPaid: { type: Number, default: null },
+            principleAmountPaid: { type: Number, default: null },
             receiptNumber: { type: String },
             principleAmountPerMonth: { type: Number },
             interestAmount: { type: Number },
