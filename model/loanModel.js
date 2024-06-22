@@ -21,6 +21,8 @@ const userSchema = new mongoose.Schema({
         totalPrincipalAmount: { type: Number, required: true, min: [3000, 'Minimum 3000 required'], max: [1000000, 'Max number exceed'] },
         interestRate: { type: Number, required: true, max: [10, 'Max number exceed'] },
         startDate: { type: Date, required: true },
+        principleAmountPerMonth: { type: Number }, // Added here
+        interestAmountPerMonth: { type: Number }, // Added here
         instalmentObject: [{
             installmentNo: { type: Number, required: true, max: [40, 'Max number exceed'] },
             isPaid: { type: Boolean, default: false },
@@ -29,8 +31,6 @@ const userSchema = new mongoose.Schema({
             emiPaid: { type: Number, default: null },
             principleAmountPaid: { type: Number, default: null },
             receiptNumber: { type: String },
-            principleAmountPerMonth: { type: Number },
-            interestAmount: { type: Number },
             totalEmiAmount: { type: Number },
             totalEmiAmountRoundoff: { type: Number },
             overdueAmount: { type: Number },
@@ -103,17 +103,19 @@ userSchema.pre('save', async function(next) {
             let monthlyPrincipal = totalPrincipalAmount / instalment;
             let totalLoan = totalPrincipalAmount;
 
+            // Store these values in loanDetails
+            const roundedMonthlyPrincipal = Math.round(monthlyPrincipal);
+            const roundedMonthlyInterestAmount = Math.round(totalLoan * monthlyInterestRate);
+
+            this.loanDetails.principleAmountPerMonth = roundedMonthlyPrincipal;
+            this.loanDetails.interestAmountPerMonth = roundedMonthlyInterestAmount;
+
             for (let i = 1; i <= instalment; i++) {
                 let currentDate = new Date(startDate); // Create a new Date object for each iteration
                 currentDate.setMonth(currentDate.getMonth() + i); // Increment month by i
-                
-                const monthlyInterestAmount = totalLoan * monthlyInterestRate;
-                console.log(monthlyInterestAmount)
-                const monthlyTotalAmount = monthlyInterestAmount + monthlyPrincipal;
 
-                // Round off monthlyPrincipal and monthlyInterestAmount to the nearest integer
-                const roundedMonthlyPrincipal = Math.round(monthlyPrincipal);
-                const roundedMonthlyInterestAmount = Math.round(monthlyInterestAmount);
+                const monthlyInterestAmount = totalLoan * monthlyInterestRate;
+                const monthlyTotalAmount = monthlyInterestAmount + monthlyPrincipal;
 
                 const roundedTotalEmiAmount = Math.round(roundedMonthlyPrincipal + roundedMonthlyInterestAmount);
 
@@ -124,8 +126,6 @@ userSchema.pre('save', async function(next) {
                     paidDate: null,
                     emiPaid: null,
                     receiptNumber: null,
-                    principleAmountPerMonth: roundedMonthlyPrincipal,
-                    interestAmount: roundedMonthlyInterestAmount,
                     totalEmiAmount: Math.round(monthlyTotalAmount),
                     totalEmiAmountRoundoff: roundedTotalEmiAmount,
                     overdueAmount: null,
@@ -133,7 +133,6 @@ userSchema.pre('save', async function(next) {
                     overDueBalance: null,
                     updatedBy: null // Set the user who created the loan as the updater of the initial installments
                 });
-
             }
 
             // Calculate totalEmiAmount after all installment objects have been added
