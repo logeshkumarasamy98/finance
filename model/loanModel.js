@@ -107,6 +107,7 @@ userSchema.pre('save', async function(next) {
                 currentDate.setMonth(currentDate.getMonth() + i); // Increment month by i
                 
                 const monthlyInterestAmount = totalLoan * monthlyInterestRate;
+                console.log(monthlyInterestAmount)
                 const monthlyTotalAmount = monthlyInterestAmount + monthlyPrincipal;
 
                 // Round off monthlyPrincipal and monthlyInterestAmount to the nearest integer
@@ -132,7 +133,6 @@ userSchema.pre('save', async function(next) {
                     updatedBy: null // Set the user who created the loan as the updater of the initial installments
                 });
 
-                totalLoan -= monthlyPrincipal; // Deduct the principal from the total loan for next month's calculation
             }
 
             // Calculate totalEmiAmount after all installment objects have been added
