@@ -9,7 +9,7 @@ app.use(express.json());
 const mongoDBUrl = 'mongodb+srv://logeshpriyanga:logesh98@cluster0.i7qbne1.mongodb.net/dayadb';
 
 // Connect to MongoDB when server starts
-app.listen(4000, async () => {
+app.listen(3000, async () => {
   try {
     await mongoose.connect(mongoDBUrl, {
       useNewUrlParser: true,
