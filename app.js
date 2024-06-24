@@ -18,7 +18,7 @@ const Company = require('./model/company');
 
 // CORS options
 const corsOptions = {
-  origin: '*', // The client origin
+  origin: 'http://localhost:3000', // The client origin
   credentials: true, // Allow credentials (cookies, authorization headers, etc.)
 };
 

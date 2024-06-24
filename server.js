@@ -6,7 +6,10 @@ require('dotenv').config({path:'./config.env'});
 app.use(express.json());
 
 // Define MongoDB connection URL
-const mongoDBUrl = 'mongodb+srv://logeshpriyanga:logesh98@cluster0.i7qbne1.mongodb.net/dayadb';
+// const mongoDBUrl = 'mongodb+srv://logeshpriyanga:logesh98@cluster0.i7qbne1.mongodb.net/dayadb';
+
+const mongoDBUrl = 'mongodb://localhost:27017/dayadb';
+
 
 // Connect to MongoDB when server starts
 app.listen(4000, async () => {
