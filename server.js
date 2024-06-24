@@ -12,7 +12,7 @@ const mongoDBUrl = 'mongodb://localhost:27017/dayadb';
 
 
 // Connect to MongoDB when server starts
-app.listen(3000, async () => {
+app.listen(4000, async () => {
   try {
     await mongoose.connect(mongoDBUrl, {
       useNewUrlParser: true,
