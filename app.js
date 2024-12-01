@@ -71,7 +71,7 @@ app.post('/ledger/expense', auth, ledgerController.expense);
 app.post('/ledger/investment', auth, ledgerController.investment);
 
 app.patch('/UpdatePrecloser/:loanNumber', precloserController.UpdatePrecloser);
-app.get('/calculate-pre-closer/:loanNumber', precloserController.calculate_pre_closer);
+app.post('/calculate-pre-closer/:loanNumber', precloserController.calculate_pre_closer);
 
 // Mount routers
 app.use('/api/loan', auth, loanRouter);
