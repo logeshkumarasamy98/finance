@@ -1,46 +1,32 @@
 const mongoose = require('mongoose');
-const validator = require('validator');
+const Schema = mongoose.Schema;
 
-const authSchema = new mongoose.Schema({
-    email: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true,
-        lowercase: true,
-        validate: {
-            validator: function(value) {
-                // Email validation using validator library
-                return validator.isEmail(value);
-            },
-            message: props => `${props.value} is not a valid email address!`
-        }
-    },
-    password: {
-        type: String,
-        required: true,
-        minlength: 8,
-        validate: {
-            validator: function(value) {
-                // Password validation using validator library
-                return validator.isStrongPassword(value);
-            },
-            message: props => `Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character!`
-        }
-    },
-    DB: {
-        type: String,
-        required: true,
-        minlength: 3
-    },
-    companyName: {
-        type: String,
-        required: true,
-        minlength: 3
-    }
-});
+const userSchema = new Schema({
+  name: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  role: {
+    type: String,
+    enum: ['admin', 'manager', 'employee'],
+    required: true
+  },
+  companies: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Company'
+  }]
+}, { timestamps: true });
 
-const auth = mongoose.model('User', authSchema);
 
-module.exports = auth;
+const User = mongoose.model('user', userSchema);
 
+module.exports = User;

@@ -1,96 +1,100 @@
-const auth = require('./../model/authModel');
-const mongoose = require('mongoose');
+const express = require('express');
+const Company = require('./../model/company');
+const UserModel = require('./../model/authModel');
+const { updateOverdueInstallments } = require('../customFunctions/overDueCalculator');
 const jwt = require('jsonwebtoken');
-require('dotenv').config({path:'./config.env'});
-const { updateOverdueInstallments } = require('./../customFunctions/overDueCalculator');
-const bcrypt = require('bcryptjs');
+const JWT_SECRET = '7Gh5ZD8J2K6Lm9N0Pq2Rs5Tu8Vx1Y';
 
-// const your_secret_key = "9d7e0cf9b9a5ef1f1b4a6e5f7c8d3b2a";
-const your_secret_key = process.env.SECRET_KEY;
+exports.createCompany = async (req, res) => {
+    try {
+        const company = new Company(req.body);
+        await company.save();
+        res.status(201).send(company);
+    } catch (error) {
+        res.status(400).send(error);
+    }
+};
 
+exports.createUser = async (req, res) => {
+    try {
+        const { name, email, password, role, companyName } = req.body;
+  
+        if (!name || !email || !password || !role || !companyName) {
+            return res.status(400).send({ error: 'All fields are required' });
+        }
+  
+        const company = await Company.findOne({ name: companyName });
+        if (!company) {
+            return res.status(404).send({ error: 'Company not found' });
+        }
+  
+        const user = new UserModel({ name, email, password, role, companies: [company._id] });
+        await user.save();
+        res.status(201).send(user);
+    } catch (error) {
+        res.status(400).send(error);
+    }
+};
 
+// exports.signIn = async (req, res) => {
+//     try {
+//         const { email, password } = req.body;
+
+//         if (!email || !password) {
+//             return res.status(400).send({ error: 'Email and password are required' });
+//         }
+
+//         const user = await UserModel.findOne({ email }).populate('companies');
+//         if (!user || user.password !== password) {
+//             return res.status(401).send({ error: 'Invalid email or password' });
+//         }
+
+//         const companyId = user.companies.length > 0 ? user.companies[0]._id : null;
+//         const token = jwt.sign({ userId: user._id, role: user.role, companyId }, JWT_SECRET, { expiresIn: '1h' });
+
+//         res.cookie('token', token, { httpOnly: true });
+//         res.status(200).json({ message: "Sign-in successful", token: token });
+//         await updateOverdueInstallments();
+//     } catch (error) {
+//         res.status(400).send({ error: 'An error occurred while signing in' });
+//     }
+// };
 
 
 exports.signIn = async (req, res) => {
-  const { email, password } = req.body;
-
   try {
-      await mongoose.connect(process.env.USER_DB);
-      console.log('DB connected... & user authenticated.');
+      const { email, password } = req.body;
 
-      const user = await auth.findOne({ email });
-
-      if (!user) {
-          return res.status(404).json({ message: "User not found" });
+      if (!email || !password) {
+          return res.status(400).send({ error: 'Email and password are required' });
       }
 
-      const isPasswordMatch = await bcrypt.compare(password, user.password);
-
-      if (!isPasswordMatch) {
-          return res.status(401).json({ message: "Invalid password" });
+      const user = await UserModel.findOne({ email }).populate('companies');
+      if (!user || user.password !== password) {
+          return res.status(401).send({ error: 'Invalid email or password' });
       }
 
-      console.log(`User found: ${user.email}`);
+      // Assuming the user has at least one company associated
+      const companyId = user.companies.length > 0 ? user.companies[0]._id : null;
+      
+      // Fetch company details based on companyId
+      const company = await Company.findById(companyId);
 
+      if (!company) {
+          return res.status(404).send({ error: 'Company details not found' });
+      }
 
-      const token = jwt.sign({ email: user.email }, your_secret_key, { expiresIn: '2H' });
+      const token = jwt.sign({ userId: user._id, role: user.role, companyId }, JWT_SECRET, { expiresIn: '1h' });
 
-      await mongoose.disconnect();
-      const companyName = user.companyName;
+      res.cookie('token', token, { httpOnly: true });
 
-      await mongoose.connect(`mongodb+srv://logeshpriyanga:logesh98@cluster0.i7qbne1.mongodb.net/${user.DB}`);
-      console.log(token)
-      console.log(`Connected to ${user.DB} database`);
+      // Send companyName and companyAddress in the response
+      res.status(200).json({ message: "Sign-in successful", token: token, companyName: company.name, companyAddress: company.address });
 
-      res.cookie('token', token, {httpOnly: true});
-      res.status(200).json({ message: "Sign-in successful", companyName });
-
-      // Perform any additional operations after successful login
+      // Assuming updateOverdueInstallments is an asynchronous function that does not need to wait for a response
       await updateOverdueInstallments();
-
   } catch (error) {
-      res.status(500).json({ message: "Internal server error", error });
-      return
+      console.error(error);
+      res.status(400).send({ error: 'An error occurred while signing in' });
   }
 };
-
-
-
-exports.signup = async (req, res) => {
-    const { email, password, confirmPassword, DB, signUpKey, companyName } = req.body;
-
-    try {
-        if (password !== confirmPassword) {
-            return res.status(400).json({ message: "Password and confirm password do not match" });
-        }
-
-        // Verify if the provided signup key matches the one from environment variables
-        if (signUpKey !== process.env.SIGNUP_KEY) {
-            return res.status(401).json({ message: "Invalid signup key" });
-        }
-
-        // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Connect to the database
-        await mongoose.connect(process.env.USER_DB);
-        console.log('DB connected... & user authenticated.');
-
-        // Create a new user with hashed password
-        const newUser = new auth({
-            email: email,
-            password: hashedPassword,
-            DB: DB,
-            companyName:companyName
-        });
-
-        // Save the user to the database
-        await newUser.save();
-
-        res.status(201).json({ message: 'User created successfully' });
-        return;
-    } catch (error) {
-        res.status(500).json({ message: 'Error creating user', error: error.message });
-        return;
-    }
-}

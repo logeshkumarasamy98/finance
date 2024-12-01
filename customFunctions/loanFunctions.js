@@ -49,8 +49,54 @@ async function updateLoanDetails(loanNumber) {
     }
 }
 
+// async function updateOverdueInstallmentsForOne(loanNumber) {
+//     try {
+//         const currentDate = new Date();
+//         // Find the user with the given loan number
+//         const user = await UserModel.findOne({ loanNumber });
+
+//         // Check if the user exists
+//         if (!user) {
+//             console.error('User not found with loan number:', loanNumber);
+//             return;
+//         }
+
+//         const firstUnpaidInstallment = user.loanDetails.instalmentObject.find(installment => !installment.isPaid && installment.dueDate < currentDate);
+        
+//         if (firstUnpaidInstallment) {
+//             user.loanDetails.emiPending = true;
+//             user.loanDetails.pendingEmiNum = firstUnpaidInstallment.installmentNo;
+//             user.loanDetails.emiPendingDate = firstUnpaidInstallment.dueDate;
+//         } else {
+//             // Check if any installment has isPaid true and due date less than current date
+//             const anyPaidInstallment = user.loanDetails.instalmentObject.find(installment => installment.isPaid && installment.dueDate < currentDate);
+//             if (anyPaidInstallment) {
+//                 user.loanDetails.emiPending = false;
+//                 user.loanDetails.pendingEmiNum = null;
+//                 user.loanDetails.emiPendingDate = null;
+//             }
+//         }
+
+//         // Calculate totalOverdueAmountToBePaid
+//         const totalOverdueAmountToBePaid = user.loanDetails.instalmentObject.reduce((total, installment) => {
+//             return total + (installment.overDueBalance || 0); // Use 0 if overDueBalance is undefined
+//         }, 0);
+
+//         // Set totalOverdueAmountToBePaid in user details
+//         user.loanDetails.totalOverdueAmountToBePaid = totalOverdueAmountToBePaid;
+
+//         await user.save(); // Use await to ensure save operation completes before moving on
+
+//         console.log('Updated overdue installments for user with loan number:', loanNumber);
+//     } catch (error) {
+//         console.error('Error updating overdue installments for user with loan number:', loanNumber, error);
+//     }
+// }
+
 async function updateOverdueInstallmentsForOne(loanNumber) {
     try {
+
+        console.log("updateOverdueInstallmentsForOne started")
         const currentDate = new Date();
         // Find the user with the given loan number
         const user = await UserModel.findOne({ loanNumber });
@@ -61,12 +107,17 @@ async function updateOverdueInstallmentsForOne(loanNumber) {
             return;
         }
 
-        const firstUnpaidInstallment = user.loanDetails.instalmentObject.find(installment => !installment.isPaid && installment.dueDate < currentDate);
+        // Filter overdue and unpaid installments
+        const overdueInstallments = user.loanDetails.instalmentObject.filter(installment => !installment.isPaid && installment.dueDate < currentDate);
         
-        if (firstUnpaidInstallment) {
+        // Calculate the number of pending EMIs
+        const pendingEmiCount = overdueInstallments.length;
+        console.log("pendingEmiCount", pendingEmiCount)
+
+        if (overdueInstallments.length > 0) {
             user.loanDetails.emiPending = true;
-            user.loanDetails.pendingEmiNum = firstUnpaidInstallment.installmentNo;
-            user.loanDetails.emiPendingDate = firstUnpaidInstallment.dueDate;
+            user.loanDetails.pendingEmiNum = pendingEmiCount; // Set pendingEmiNum to the number of pending EMIs
+            user.loanDetails.emiPendingDate = overdueInstallments[0].dueDate; // Keep the date of the first unpaid installment
         } else {
             // Check if any installment has isPaid true and due date less than current date
             const anyPaidInstallment = user.loanDetails.instalmentObject.find(installment => installment.isPaid && installment.dueDate < currentDate);
@@ -92,6 +143,8 @@ async function updateOverdueInstallmentsForOne(loanNumber) {
         console.error('Error updating overdue installments for user with loan number:', loanNumber, error);
     }
 }
+
+
 
 async function updateLoanStatus(loanNumber) {
     try {

@@ -5,23 +5,22 @@ exports.expense = async (req, res) => {
     session.startTransaction();
     try {
         const { paymentMethod, remarks, total } = req.body;
-        const entryDate = req.body.entryDate || new Date(); // Use provided entry date or current date if not provided
-
-        // Update isExpense field based on conditions
+        const entryDate = req.body.entryDate;
+        const companyId = req.companyId;
+        const userId = req.userId;
         const isExpense = true;
 
-        // Create a new ledger entry
         const newEntry = new ledgerModel({
             paymentMethod,
             remarks,
             total,
             isExpense,
-            creditOrDebit: 'Debit', // Always set creditOrDebit as "Debit"
+            creditOrDebit: 'Debit',
             entryDate,
-            // Add other fields as needed
+            createdBy: userId,
+            company: companyId
         });
 
-        // Save the new entry to the database
         await newEntry.save({ session });
 
         await session.commitTransaction();
@@ -36,15 +35,14 @@ exports.expense = async (req, res) => {
     }
 };
 
-
-
 exports.investment = async (req, res) => {
     const session = await ledgerModel.startSession();
     session.startTransaction();
     try {
         const { paymentMethod, remarks, total } = req.body;
-        const entryDate = req.body.entryDate || new Date(); // Use provided entry date or current date if not provided
-
+        const entryDate = req.body.entryDate; // Use provided entry date or current date if not provided
+        const companyId = req.companyId; // Assuming companyId is available in the request object
+        const userId = req.userId;
         // Set isInvestment to true
         const isInvestment = true;
 
@@ -58,8 +56,9 @@ exports.investment = async (req, res) => {
             total,
             isInvestment,
             creditOrDebit,
-            entryDate, // Adding the entryDate field
-            // Add other fields as needed
+            entryDate, 
+            createdBy: userId, 
+            company: companyId
         });
 
         // Save the new entry to the database
