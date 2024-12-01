@@ -1,6 +1,5 @@
 const UserModel = require('../model/loanModel');
 
-
 async function updateLoanDetails(loanNumber) {
     try {
       console.log('updateLoanDetails..');
@@ -323,5 +322,57 @@ async function updateLoanStatus(loanNumber) {
 //       console.error('Error updating loan status:', error);
 //   }
 // }
-  
+
+
+
+// class ReceiptNumberGenerator {
+//   static async generateDebitReceiptNumber(model, companyId, session) {
+//     try {
+//       // Find the last receipt number for the company using aggregation
+//       const lastReceipt = await model.findOne(
+//         { company: companyId },
+//         { debitReceiptNumber: 1 },
+//         { 
+//           sort: { 
+//             debitReceiptNumber: -1 
+//           },
+//           session 
+//         }
+//       );
+
+//       // Extract number from the last receipt or start from 0
+//       let nextNumber = 1;
+//       if (lastReceipt && lastReceipt.debitReceiptNumber) {
+//         const match = lastReceipt.debitReceiptNumber.match(/D-(\d+)/);
+//         if (match && match[1]) {
+//           nextNumber = parseInt(match[1], 10) + 1;
+//         }
+//       }
+
+//       // Format the new receipt number
+//       const newReceiptNumber = `D-${nextNumber}`;
+      
+//       // Verify uniqueness
+//       const exists = await model.findOne(
+//         { 
+//           company: companyId, 
+//           debitReceiptNumber: newReceiptNumber 
+//         },
+//         null,
+//         { session }
+//       );
+
+//       if (exists) {
+//         // If duplicate found, recursively try next number
+//         return this.generateDebitReceiptNumber(model, companyId, session);
+//       }
+
+//       return newReceiptNumber;
+//     } catch (error) {
+//       throw new Error(`Failed to generate receipt number: ${error.message}`);
+//     }
+//   }
+// }
+
+
 module.exports ={updateOverdueInstallmentsForOne, updateLoanDetails,  updateLoanStatus}

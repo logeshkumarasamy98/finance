@@ -2,7 +2,7 @@ const loanModel = require('../model/loanModel');
 const ledgerModel = require('./../model/ledgerModel');
 const companyModel = require('./../model/company');
 const userModel = require('./../model/authModel');
-
+const mongoose = require('mongoose');
 
 const {updateOverdueInstallmentsForOne, updateLoanDetails, updateLoanStatus} = require('../customFunctions/loanFunctions')
 const {updateOverdueInstallments} = require('../customFunctions/overDueCalculator')
@@ -131,83 +131,158 @@ const {updateOverdueInstallments} = require('../customFunctions/overDueCalculato
 //         console.log(err);
 //     }
 // };
+//---------------------------------------
+// exports.createUser = async (req, res) => {
+//     const session = await loanModel.startSession();
+//     session.startTransaction();
+//     try {
+//         const companyId = req.companyId;
+
+//         // Find the last user based on the company ID
+//         const lastUser = await loanModel.findOne({ company: companyId }, {}, { sort: { 'loanNumber': -1 } }).session(session);
+
+//         let lastLoanNumber = 0;
+//         if (lastUser && !isNaN(lastUser.loanNumber)) {
+//             lastLoanNumber = lastUser.loanNumber;
+//         }
+//         const newLoanNumber = lastLoanNumber + 1;
+
+//         // Get the last debitReceiptNumber for the specific company
+//         const lastDebitReceiptUser = await loanModel.findOne({ company: companyId }, {}, { sort: { 'debitReceiptNumber': -1 } }).session(session);
+//         const lastDebitReceiptNumber = lastDebitReceiptUser ? lastDebitReceiptUser.debitReceiptNumber : "D-0";
+//         const lastReceiptNumberMatch = lastDebitReceiptNumber.match(/D-(\d+)/);
+//         let lastReceiptNumber = 0;
+//         if (lastReceiptNumberMatch && lastReceiptNumberMatch[1]) {
+//             lastReceiptNumber = parseInt(lastReceiptNumberMatch[1]);
+//         }
+
+//         // Increment the last receipt number to get the new one
+//         const newReceiptNumber = `D-${lastReceiptNumber + 1}`;
+
+//         console.log("Last Debit Receipt Number:", lastDebitReceiptNumber);
+//         console.log("New Debit Receipt Number:", newReceiptNumber);
+//         console.log(req.userId);
+
+//         // Directly pass req.body to the loanModel constructor
+//         const user = new loanModel({
+//             loanNumber: newLoanNumber,
+//             debitReceiptNumber: newReceiptNumber,
+//             createdBy: req.userId, // Set the createdBy field to the userId
+//             company: companyId, // Set the company field to the companyId
+//             ...req.body
+//         });
+
+//         await user.save({ session });
+
+//         // Call updateOverdueInstallmentsForOne with the new loan number
+//         // await updateOverdueInstallmentsForOne(newLoanNumber, session);
+
+//         // Creating ledger entry
+//         const ledgerEntry = new ledgerModel({
+//             isLoanDebit: true,
+//             loanNumber: newLoanNumber,
+//             receiptNumber: newReceiptNumber, // Including 'D-' prefix
+//             remarks: req.body.details.loanPayerDetails.name,
+//             total: req.body.loanDetails.totalPrincipalAmount,
+//             creditOrDebit: 'Debit',
+//             paymentMethod: req.body.paymentMethod,
+//             createdBy: req.userId, // Set the createdBy field to the userId
+//             company: companyId
+//         });
+//         await ledgerEntry.save({ session });
+
+//         // Commit the transaction
+//         await session.commitTransaction();
+//         session.endSession();
+
+//         // Call updateLoanDetails with the new loan number
+//         await updateLoanDetails(newLoanNumber);
+//         await updateOverdueInstallmentsForOne(newLoanNumber);
+//         // Send response
+//         res.status(201).json({ status: 'success', message: 'User created successfully', user });
+//     } catch (err) {
+//         // Handle errors
+//         await session.abortTransaction();
+//         session.endSession();
+//         res.status(422).json({ status: 'error', message: 'All fields required', error: err });
+//         console.log(err);
+//     }
+// };
+//----------------------------------------
+
+
+const counterSchema = new mongoose.Schema({
+    company: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', required: true },
+    debitReceiptNumber: { type: Number, default: 0 },
+});
+
+const Counter = mongoose.model('Counter', counterSchema);
+
 
 exports.createUser = async (req, res) => {
     const session = await loanModel.startSession();
     session.startTransaction();
+
     try {
         const companyId = req.companyId;
 
-        // Find the last user based on the company ID
-        const lastUser = await loanModel.findOne({ company: companyId }, {}, { sort: { 'loanNumber': -1 } }).session(session);
+        // Increment debitReceiptNumber atomically
+        const counter = await Counter.findOneAndUpdate(
+            { company: companyId },
+            { $inc: { debitReceiptNumber: 1 } },
+            { new: true, upsert: true, session }
+        );
 
-        let lastLoanNumber = 0;
-        if (lastUser && !isNaN(lastUser.loanNumber)) {
-            lastLoanNumber = lastUser.loanNumber;
-        }
+        const newReceiptNumber = `D-${counter.debitReceiptNumber}`;
+
+        // Get the last loan number
+        const lastUser = await loanModel.findOne({ company: companyId }, {}, { sort: { loanNumber: -1 } }).session(session);
+        const lastLoanNumber = lastUser?.loanNumber || 0;
         const newLoanNumber = lastLoanNumber + 1;
 
-        // Get the last debitReceiptNumber for the specific company
-        const lastDebitReceiptUser = await loanModel.findOne({ company: companyId }, {}, { sort: { 'debitReceiptNumber': -1 } }).session(session);
-        const lastDebitReceiptNumber = lastDebitReceiptUser ? lastDebitReceiptUser.debitReceiptNumber : "D-0";
-        const lastReceiptNumberMatch = lastDebitReceiptNumber.match(/D-(\d+)/);
-        let lastReceiptNumber = 0;
-        if (lastReceiptNumberMatch && lastReceiptNumberMatch[1]) {
-            lastReceiptNumber = parseInt(lastReceiptNumberMatch[1]);
-        }
-
-        // Increment the last receipt number to get the new one
-        const newReceiptNumber = `D-${lastReceiptNumber + 1}`;
-
-        console.log("Last Debit Receipt Number:", lastDebitReceiptNumber);
-        console.log("New Debit Receipt Number:", newReceiptNumber);
-        console.log(req.userId);
-
-        // Directly pass req.body to the loanModel constructor
+        // Create a new loan document
         const user = new loanModel({
             loanNumber: newLoanNumber,
             debitReceiptNumber: newReceiptNumber,
-            createdBy: req.userId, // Set the createdBy field to the userId
-            company: companyId, // Set the company field to the companyId
+            createdBy: req.userId,
+            company: companyId,
             ...req.body
         });
 
         await user.save({ session });
 
-        // Call updateOverdueInstallmentsForOne with the new loan number
-        // await updateOverdueInstallmentsForOne(newLoanNumber, session);
-
-        // Creating ledger entry
+        // Create ledger entry
         const ledgerEntry = new ledgerModel({
             isLoanDebit: true,
             loanNumber: newLoanNumber,
-            receiptNumber: newReceiptNumber, // Including 'D-' prefix
+            receiptNumber: newReceiptNumber,
             remarks: req.body.details.loanPayerDetails.name,
             total: req.body.loanDetails.totalPrincipalAmount,
             creditOrDebit: 'Debit',
             paymentMethod: req.body.paymentMethod,
-            createdBy: req.userId, // Set the createdBy field to the userId
+            createdBy: req.userId,
             company: companyId
         });
+
         await ledgerEntry.save({ session });
 
         // Commit the transaction
         await session.commitTransaction();
         session.endSession();
 
-        // Call updateLoanDetails with the new loan number
+        // Update loan details
         await updateLoanDetails(newLoanNumber);
         await updateOverdueInstallmentsForOne(newLoanNumber);
-        // Send response
+
         res.status(201).json({ status: 'success', message: 'User created successfully', user });
     } catch (err) {
-        // Handle errors
         await session.abortTransaction();
         session.endSession();
         res.status(422).json({ status: 'error', message: 'All fields required', error: err });
         console.log(err);
     }
 };
+
 
 // exports.getUsers = async(req, res)=>{
 //     try{
