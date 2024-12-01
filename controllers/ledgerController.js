@@ -5,7 +5,7 @@ exports.expense = async (req, res) => {
     session.startTransaction();
     try {
         const { paymentMethod, remarks, total } = req.body;
-        const entryDate = req.body.entryDate || new Date();
+        const entryDate = req.body.entryDate;
         const companyId = req.companyId;
         const userId = req.userId;
         const isExpense = true;
@@ -40,7 +40,7 @@ exports.investment = async (req, res) => {
     session.startTransaction();
     try {
         const { paymentMethod, remarks, total } = req.body;
-        const entryDate = req.body.entryDate || new Date(); // Use provided entry date or current date if not provided
+        const entryDate = req.body.entryDate; // Use provided entry date or current date if not provided
         const companyId = req.companyId; // Assuming companyId is available in the request object
         const userId = req.userId;
         // Set isInvestment to true

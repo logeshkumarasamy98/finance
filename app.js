@@ -30,6 +30,7 @@ app.use(cookieParser());
 const loanRouter = express.Router();
 loanRouter.post('/', loanController.createUser);
 loanRouter.get('/:loanNumber', loanController.getUsers);
+loanRouter.delete('/:loanNumber', loanController.deleteLoan);
 loanRouter.get('/', loanController.getAllUsers);
 loanRouter.patch('/patch/:loanNumber', loanController.updateLoanPayer);
 

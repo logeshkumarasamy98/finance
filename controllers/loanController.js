@@ -253,6 +253,26 @@ exports.getUsers = async (req, res) => {
     }
 };
 
+exports.deleteLoan = async (req, res) => {
+    try {
+        const { loanNumber } = req.params;
+        const companyId = req.companyId; // Assuming companyId is available in the request object
+
+        // Find and delete the loan by loanNumber and companyId
+        const deletedLoan = await loanModel.findOneAndDelete({ loanNumber, company: companyId });
+
+        // Check if the loan was found and deleted
+        if (!deletedLoan) {
+            return res.status(404).json({ error: 'Loan not found' });
+        }
+
+        // Send a success response
+        res.status(200).json({ status: 'success', message: 'Loan successfully deleted', deletedLoan });
+    } catch (err) {
+        // Handle errors and send a response
+        res.status(400).json({ error: err.message });
+    }
+};
 
 exports.getAllUsers = async (req, res) => {
     try {
