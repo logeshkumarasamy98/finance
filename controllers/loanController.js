@@ -284,6 +284,42 @@ exports.createUser = async (req, res) => {
 };
 
 
+exports.deleteLoan = async (req, res) => {
+    const session = await loanModel.startSession();
+    session.startTransaction();
+
+    try {
+        const { loanNumber } = req.params; // Assuming loanNumber is passed as a parameter
+        const companyId = req.companyId;
+
+        // Find the loan to delete
+        const loanToDelete = await loanModel.findOne({ loanNumber, company: companyId }).session(session);
+
+        if (!loanToDelete) {
+            throw new Error('Loan not found');
+        }
+
+        // Delete the loan
+        await loanModel.deleteOne({ loanNumber, company: companyId }).session(session);
+
+        // Delete associated ledger entry
+        await ledgerModel.deleteOne({ loanNumber, company: companyId }).session(session);
+
+        // Commit the transaction
+        await session.commitTransaction();
+        session.endSession();
+
+        res.status(200).json({ status: 'success', message: 'Loan and associated ledger entry deleted successfully' });
+    } catch (err) {
+        // Rollback the transaction
+        await session.abortTransaction();
+        session.endSession();
+
+        res.status(500).json({ status: 'error', message: 'Failed to delete loan', error: err.message });
+        console.error(err);
+    }
+};
+
 // exports.getUsers = async(req, res)=>{
 //     try{
 //       const loanNumber = req.params.loanNumber;
@@ -328,26 +364,26 @@ exports.getUsers = async (req, res) => {
     }
 };
 
-exports.deleteLoan = async (req, res) => {
-    try {
-        const { loanNumber } = req.params;
-        const companyId = req.companyId; // Assuming companyId is available in the request object
+// exports.deleteLoan = async (req, res) => {
+//     try {
+//         const { loanNumber } = req.params;
+//         const companyId = req.companyId; // Assuming companyId is available in the request object
 
-        // Find and delete the loan by loanNumber and companyId
-        const deletedLoan = await loanModel.findOneAndDelete({ loanNumber, company: companyId });
+//         // Find and delete the loan by loanNumber and companyId
+//         const deletedLoan = await loanModel.findOneAndDelete({ loanNumber, company: companyId });
 
-        // Check if the loan was found and deleted
-        if (!deletedLoan) {
-            return res.status(404).json({ error: 'Loan not found' });
-        }
+//         // Check if the loan was found and deleted
+//         if (!deletedLoan) {
+//             return res.status(404).json({ error: 'Loan not found' });
+//         }
 
-        // Send a success response
-        res.status(200).json({ status: 'success', message: 'Loan successfully deleted', deletedLoan });
-    } catch (err) {
-        // Handle errors and send a response
-        res.status(400).json({ error: err.message });
-    }
-};
+//         // Send a success response
+//         res.status(200).json({ status: 'success', message: 'Loan successfully deleted', deletedLoan });
+//     } catch (err) {
+//         // Handle errors and send a response
+//         res.status(400).json({ error: err.message });
+//     }
+// };
 
 exports.getAllUsers = async (req, res) => {
     try {
