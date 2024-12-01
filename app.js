@@ -18,9 +18,19 @@ const Company = require('./model/company');
 
 // CORS options
 const corsOptions = {
-  origin: 'http://localhost:3000', // The client origin
+  origin: function (origin, callback) {
+    // List of allowed origins
+    const allowedOrigins = ['http://localhost:3000', 'http://localhost:80', 'http://logesh.store'];
+
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true, // Allow credentials (cookies, authorization headers, etc.)
 };
+
 
 app.use(cors(corsOptions));
 app.use(express.json());
