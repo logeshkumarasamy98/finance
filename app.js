@@ -70,8 +70,9 @@ authRouter.post('/createCompany', authController.createCompany);
 app.post('/ledger/expense', auth, ledgerController.expense);
 app.post('/ledger/investment', auth, ledgerController.investment);
 
-app.patch('/UpdatePrecloser/:loanNumber', precloserController.UpdatePrecloser);
-app.post('/calculate-pre-closer/:loanNumber', precloserController.calculate_pre_closer);
+// app.patch('/UpdatePrecloser/:loanNumber', precloserController.UpdatePrecloser);
+// app.post('/calculate-pre-closer/:loanNumber', precloserController.calculate_pre_closer);
+app.post('/managePrecloser/:loanNumber', precloserController.managePrecloser)
 
 // Mount routers
 app.use('/api/loan', auth, loanRouter);
