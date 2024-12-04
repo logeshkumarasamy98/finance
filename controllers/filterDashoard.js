@@ -512,6 +512,7 @@
 const ledgerModel = require('../model/ledgerModel');
 const loanModel = require('../model/loanModel');
 const xlsx = require('xlsx');
+const mongoose = require('mongoose');
 
 exports.activeLoanPayer = async (req, res) => {
     const companyId = req.companyId;
@@ -723,6 +724,50 @@ exports.LoanPayerDetails = async (req, res) => {
         res.status(500).json({
             status: 'error',
             message: 'Error fetching loan payer details.'
+        });
+    }
+};
+
+exports.getLoanDetailsByPhoneNumber = async (req, res) => {
+    const { mobileNumber } = req.params; // Extract the phone number from the route parameters
+    const companyId = req.companyId; // Extract companyId from the request
+
+    try {
+        // Perform aggregation to filter by phone number
+        let loanData = await loanModel.aggregate([
+            {
+                $match: {
+                    "details.loanPayerDetails.mobileNum1": parseInt(mobileNumber) // Match the provided phone number
+                }
+            },
+            {
+                $project: {
+                    "loanNumber": "$loanNumber",
+                    "loanPayerName": "$details.loanPayerDetails.name",
+                    "loanBalance": "$loanDetails.totalEmiAmount",
+                    "mobileNum1": "$details.loanPayerDetails.mobileNum1",
+                    "vehicleNumber": "$details.vehicle.vehicleNumber",
+                    "vehicleType": "$details.vehicle.type",
+                    "vehicleModel": "$details.vehicle.model",
+                    "company": "$company"
+                }
+            }
+        ]);
+
+        console.log('Aggregated Data:', loanData);
+
+        // Filter results by companyId
+        loanData = loanData.filter(user => user.company && user.company.toString() === companyId);
+
+        res.status(200).json({
+            status: 'Success',
+            data: loanData
+        });
+    } catch (err) {
+        console.error('Error fetching loan details:', err);
+        res.status(500).json({
+            status: 'error',
+            message: 'Error fetching loan details by phone number.'
         });
     }
 };

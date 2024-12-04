@@ -49,6 +49,7 @@ const filterDashboardRouter = express.Router();
 filterDashboardRouter.get('/activeLoanPayer', filterDashboard.activeLoanPayer);
 filterDashboardRouter.get('/vehicleTypePercentage', filterDashboard.vehicleTypePercentage);
 filterDashboardRouter.get('/LoanPayerDetails/:loanNumber', filterDashboard.LoanPayerDetails);
+filterDashboardRouter.get('/getLoanDetailsByPhoneNumber/:mobileNumber', filterDashboard.getLoanDetailsByPhoneNumber);
 filterDashboardRouter.get('/getPendingEmiDetails', filterDashboard.getPendingEmiDetails);
 filterDashboardRouter.get('/pendingEmiPayerLength', filterDashboard.pendingEmiPayerLength);
 filterDashboardRouter.get('/ledgerDatas', filterDashboard.ledgerDatas);
