@@ -80,6 +80,7 @@ jobs:
         host: 100.108.41.6
         username: logesh
         password: logesh98
+        key: ${{ secrets.ONPREM_SSH_KEY }}
         port: 22
         script: |
           # Stop and remove the existing container (if any)
