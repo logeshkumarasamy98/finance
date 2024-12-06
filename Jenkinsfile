@@ -1,7 +1,7 @@
 pipeline {
   agent any
   stages {
-    stage('') {
+    stage('error') {
       steps {
         git(url: 'https://github.com/logeshkumarasamy98/finance.git', branch: 'main')
       }
