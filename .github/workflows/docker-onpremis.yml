@@ -73,23 +73,21 @@ jobs:
         docker build -t ${{ secrets.DOCKER_USERNAME }}/finbackend:latest .
         docker push ${{ secrets.DOCKER_USERNAME }}/finbackend:latest
 
-    # Step 4: Set up SSH to On-Premises Server
-    steps:
-        # Step 1: Execute remote SSH commands to deploy Docker container
-        - name: Deploy Docker Container on On-Premises Server
-          uses: appleboy/ssh-action@v1.2.0
-          with:
-            host: 100.108.41.6
-            username: logesh
-            password: logesh98
-            port: 22
-            script: |
-              # Stop and remove the existing container (if any)
-              docker stop finbackend || exit 1
-              docker rm finbackend || exit 1
+    # Step 4: Deploy Docker Container on On-Premises Server
+    - name: Deploy Docker Container on On-Premises Server
+      uses: appleboy/ssh-action@v1.2.0
+      with:
+        host: 100.108.41.6
+        username: logesh
+        password: logesh98
+        port: 22
+        script: |
+          # Stop and remove the existing container (if any)
+          docker stop finbackend || exit 1
+          docker rm finbackend || exit 1
     
-              # Pull the latest Docker image from Docker Hub
-              docker pull ${{ secrets.DOCKER_USERNAME }}/finbackend:latest || exit 1
+          # Pull the latest Docker image from Docker Hub
+          docker pull ${{ secrets.DOCKER_USERNAME }}/finbackend:latest || exit 1
     
-              # Run the new container with the updated image
-              docker run -d --name finbackend -p 4000:4000 ${{ secrets.DOCKER_USERNAME }}/finbackend:latest || exit 1
+          # Run the new container with the updated image
+          docker run -d --name finbackend -p 4000:4000 ${{ secrets.DOCKER_USERNAME }}/finbackend:latest || exit 1
