@@ -1,9 +1,9 @@
 pipeline {
   agent any
   stages {
-    stage('code push') {
+    stage('') {
       steps {
-        git(url: 'https://github.com/logeshkumarasamy98/finance.git', branch: 'main')
+        git(url: 'https://github.com/logeshkumarasamy98/finance/', branch: 'main')
       }
     }
 
