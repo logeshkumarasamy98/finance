@@ -32,8 +32,8 @@ jobs:
     - name: Deploy to On-Premises Server
       uses: appleboy/ssh-action@v0.1.10
       with:
-        host: your.onprem.server.ip
-        username: your-ssh-username
+        host: 100.108.41.6
+        username: logesh
         key: ${{ secrets.ONPREM_SSH_KEY }}
         port: 22
         script: |
