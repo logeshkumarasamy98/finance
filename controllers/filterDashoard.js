@@ -1155,3 +1155,52 @@ exports.downloadPendingEmiDetails = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+
+exports.getLoanDataLengths = async (req, res) => {
+    const companyId = req.companyId;
+
+    try {
+        // Fetch all data in parallel
+        const [
+            pendingEmiData,
+            overdueData,
+            closedLoanData,
+            seizedLoanData,
+            activeLoanData
+        ] = await Promise.all([
+            loanModel.aggregate([{ $match: { "loanDetails.emiPending": true } }]), // Pending EMI
+            loanModel.aggregate([{ $match: { "loanDetails.totalOverdueAmountToBePaid": { $gt: 0 } } }]), // Overdue
+            loanModel.aggregate([{ $match: { "loanDetails.isActive": false } }]), // Closed Loans
+            loanModel.aggregate([{ $match: { "loanDetails.isSeized": true } }]), // Seized Loans
+            loanModel.aggregate([{ $match: { "loanDetails.isActive": true } }]), // Active Loans
+        ]);
+
+        // Filter data for the specific company
+        const filterByCompanyId = users => 
+            users.filter(user => user.company && user.company.toString() === companyId);
+
+        // Calculate lengths
+        const lengths = {
+            pendingEmi: filterByCompanyId(pendingEmiData).length,
+            overdue: filterByCompanyId(overdueData).length,
+            closedLoan: filterByCompanyId(closedLoanData).length,
+            seizedLoan: filterByCompanyId(seizedLoanData).length,
+            activeLoan: filterByCompanyId(activeLoanData).length,
+        };
+
+        // Send response
+        res.status(200).json({
+            status: 'Success',
+            data: lengths
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            status: 'error',
+            message: 'An error occurred while fetching loan data lengths.'
+        });
+    }
+};
+

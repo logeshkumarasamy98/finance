@@ -247,8 +247,10 @@ const ledgerModel = require('./../model/ledgerModel');
 
 exports.managePrecloser = async (req, res) => {
     const { loanNumber } = req.params;
-    const { date, OverdueforPrecloser, forceCloseApproverName, action, paymentMethod } = req.body;
-
+    const { date, OverdueforPrecloser, forceCloseApproverName, action, paymentMethod = 'cash'} = req.body;
+    const companyId = req.companyId; // Assuming companyId is available in the request object
+    const userId = req.userId; // Assuming userId is available in the request object
+    console.log(userId)
     try {
         // Find the user by loan number
         const user = await UserModel.findOne({ loanNumber });
@@ -349,7 +351,7 @@ exports.managePrecloser = async (req, res) => {
                 await user.save({ session });
 
                 // Update ledger model
-                const receiptNumber = await updateLedgerModel(user, preCloserPrincipleAmount, preCloserInterestAmount, user.loanDetails.preCloser.preCloserOverDue, preCloserTotalAmount, paymentMethod);
+                const receiptNumber = await updateLedgerModel(user, preCloserPrincipleAmount, preCloserInterestAmount, user.loanDetails.preCloser.preCloserOverDue, preCloserTotalAmount, paymentMethod, userId, companyId);
 
                 // Commit the transaction
                 await session.commitTransaction();
@@ -376,7 +378,7 @@ exports.managePrecloser = async (req, res) => {
     }
 };
 
-async function updateLedgerModel(user, preCloserPrincipleAmount, preCloserInterestAmount, preCloserOverDue, preCloserTotalAmount, paymentMethod) {
+async function updateLedgerModel(user, preCloserPrincipleAmount, preCloserInterestAmount, preCloserOverDue, preCloserTotalAmount, paymentMethod, userId, companyId) {
     try {
         const highestReceiptEntry = await ledgerModel.findOne({}).sort({ receiptNumberHid: -1 });
         const newReceiptNumberHid = highestReceiptEntry ? highestReceiptEntry.receiptNumberHid + 1 : 1;
@@ -392,7 +394,9 @@ async function updateLedgerModel(user, preCloserPrincipleAmount, preCloserIntere
             overDue: preCloserOverDue,
             total: preCloserTotalAmount,
             creditOrDebit: 'Credit',
-            paymentMethod
+            paymentMethod:'cash',
+            createdBy: userId, // Set the createdBy field to the userId
+            company: companyId 
         });
 
         await ledgerEntry.save();

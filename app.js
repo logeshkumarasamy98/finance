@@ -61,6 +61,7 @@ filterDashboardRouter.get('/closedLoanPayerLength', filterDashboard.closedLoanPa
 filterDashboardRouter.get('/seizedLoanPayerLength', filterDashboard.seizedLoanPayerLength);
 filterDashboardRouter.get('/seizedLoanPayer', filterDashboard.seizedLoanPayer);
 filterDashboardRouter.get('/downloadPendingEmiDetails', filterDashboard.downloadPendingEmiDetails);
+filterDashboardRouter.get('/getLoanDataLengths', filterDashboard.getLoanDataLengths);
 
 // Define auth routes
 const authRouter = express.Router();
@@ -73,7 +74,7 @@ app.post('/ledger/investment', auth, ledgerController.investment);
 
 // app.patch('/UpdatePrecloser/:loanNumber', precloserController.UpdatePrecloser);
 // app.post('/calculate-pre-closer/:loanNumber', precloserController.calculate_pre_closer);
-app.post('/managePrecloser/:loanNumber', precloserController.managePrecloser)
+app.post('/managePrecloser/:loanNumber', auth, precloserController.managePrecloser)
 
 // Mount routers
 app.use('/api/loan', auth, loanRouter);
