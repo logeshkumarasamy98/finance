@@ -1037,11 +1037,21 @@ exports.ledgerDatas = (req, res) => {
 //         });
 // };
 
+
+
+
+
 exports.getOverDueUsers = async (req, res) => {
-    const companyId = req.companyId;
+    const companyId = req.companyId; // Assuming `req.companyId` contains the company's ObjectId as a string.
     try {
-        let pendingEmiDetails = await loanModel.aggregate([
-            { $match: { "loanDetails.totalOverdueAmountToBePaid": { $gt: 0 } } },
+        const pendingEmiDetails = await loanModel.aggregate([
+            {
+                $match: {
+                    "loanDetails.totalOverdueAmountToBePaid": { $gt: 0 }, // Filter by overdue amount
+                    "loanDetails.isActive": true,                        // Filter by active status
+                    "company": new mongoose.Types.ObjectId(companyId),  // Corrected ObjectId instantiation
+                }
+            },
             {
                 $project: {
                     loanNumber: "$loanNumber",
@@ -1051,19 +1061,19 @@ exports.getOverDueUsers = async (req, res) => {
                     vehicalNum: "$details.vehicle.vehicleNumber",
                     vehicalType: "$details.vehicle.type",
                     vehicalModel: "$details.vehicle.model",
-                    company: "$company"
+                    company: "$company",
                 }
             }
         ]);
 
-        pendingEmiDetails = pendingEmiDetails.filter(user => user.company && user.company.toString() === companyId);
-
-        res.status(200).json({ pendingEmiDetails, length: pendingEmiDetails.length });
+        res.status(200).json({ success: true, data: pendingEmiDetails });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error("Error fetching overdue users:", error);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 };
+
+
 
 exports.getOverDueLength = async (req, res) => {
     const companyId = req.companyId;

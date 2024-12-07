@@ -1,5 +1,5 @@
 
-const UserModel = require('../model/loanModel');
+const loanModel = require('../model/loanModel');
 const ledgerModel = require('./../model/ledgerModel');
 
 // exports.calculate_pre_closer = async (req, res) => {
@@ -245,15 +245,181 @@ const ledgerModel = require('./../model/ledgerModel');
 
 
 
+// exports.managePrecloser = async (req, res) => {
+//     const { loanNumber } = req.params;
+//     const { date, OverdueforPrecloser, forceCloseApproverName, action, paymentMethod = 'cash'} = req.body;
+//     const companyId = req.companyId; // Assuming companyId is available in the request object
+//     const userId = req.userId; // Assuming userId is available in the request object
+//     console.log(userId)
+//     try {
+//         // Find the user by loan number
+//         const user = await loanModel.findOne({ loanNumber });
+
+//         // Check if the user exists
+//         if (!user) {
+//             return res.status(404).json({ error: 'User not found' });
+//         }
+
+//         // Convert user input date to a Date object
+//         const providedDate = new Date(date);
+
+//         // Validate the date
+//         if (!date || isNaN(providedDate.getTime())) {
+//             return res.status(400).json({ error: 'Invalid or missing date' });
+//         }
+
+//         // Calculate months difference
+//         const startDate = new Date(user.loanDetails.startDate);
+//         const monthsDifference = (providedDate.getFullYear() - startDate.getFullYear()) * 12 + (providedDate.getMonth() - startDate.getMonth());
+
+//         let preCloserTotalAmount, preCloserPrincipleAmount, preCloserInterestAmount;
+//         const totalOverdueAmountToBePaid = user.loanDetails.totalOverdueAmountToBePaid;
+
+//         if (monthsDifference >= 4) {
+//             let sumOfPaidInstallments = 0;
+//             let sumOfUnpaidInstallmentsEmi = 0;
+//             let sumOfUnpaidInstallmentsInterest = 0;
+
+//             // Calculate sums for installments
+//             for (const installment of user.loanDetails.instalmentObject) {
+                
+//                 if (installment.isPaid) {
+//                     sumOfPaidInstallments += installment.principleAmountCurrentMonth;
+//                 } else {
+//                     sumOfUnpaidInstallmentsEmi += installment.principleAmountCurrentMonth;
+//                     sumOfUnpaidInstallmentsInterest += installment.interestAmount;
+//                 }
+//             }
+
+//             preCloserPrincipleAmount = Math.round(sumOfUnpaidInstallmentsEmi);
+//             preCloserInterestAmount = sumOfUnpaidInstallmentsInterest;
+//             preCloserTotalAmount = Math.round(preCloserPrincipleAmount + preCloserInterestAmount);
+
+//         } else {
+//             const variable = user.loanDetails.totalPrincipalAmount * 0.036; // 3.6% of totalPrincipalAmount
+//             preCloserTotalAmount = (variable * 3) + user.loanDetails.totalPrincipalAmount - user.loanDetails.totalEmiAlreadyPaid;
+
+//             preCloserPrincipleAmount = user.loanDetails.totalPrincipalAmount;
+//             preCloserInterestAmount = Math.round(variable * 3);
+//         }
+
+//         // If the action is only to calculate
+//         if (action === 'calculate') {
+//             return res.status(200).json({
+//                 preCloserTotalAmount,
+//                 preCloserPrincipleAmount,
+//                 preCloserInterestAmount,
+//                 totalOverdueAmountToBePaid
+//             });
+//         }
+
+//         // For updates
+//         if (action === 'update') {
+//             // Check pre-closer status and loan activity
+//             if (user.loanDetails.preCloser.hasPreCloser) {
+//                 return res.status(400).json({ error: 'This loan is already preclosed' });
+//             }
+//             if (!user.loanDetails.isActive) {
+//                 return res.status(400).json({ error: 'This loan is already closed' });
+//             }
+
+//             // Start a session for transactional updates
+//             const session = await loanModel.startSession();
+//             session.startTransaction();
+
+//             try {
+//                 // Update loan details
+//                 user.loanDetails.preCloser = {
+//                     hasPreCloser: true,
+//                     preCloserDate: providedDate,
+//                     preCloserTotalAmount,
+//                     preCloserPrincipleAmount,
+//                     preCloserInterestAmount,
+//                     preCloserOverDue: totalOverdueAmountToBePaid + OverdueforPrecloser,
+//                     isPrecloserAbove3Months: monthsDifference >= 4,
+//                     isPrecloserBelow3Months: monthsDifference < 4
+//                 };
+//                 user.loanDetails.isActive = false;
+//                 user.loanDetails.emiPending = false;
+//                 user.loanDetails.pendingEmiNum = 0;
+//                 user.loanDetails.emiPendingDate = null;
+
+//                 if (forceCloseApproverName) {
+//                     user.loanDetails.forceCloseApproverName = forceCloseApproverName;
+//                 }
+
+//                 await user.save({ session });
+
+//                 // Update ledger model
+//                 const receiptNumber = await updateLedgerModel(user, preCloserPrincipleAmount, preCloserInterestAmount, user.loanDetails.preCloser.preCloserOverDue, preCloserTotalAmount, paymentMethod, userId, companyId);
+
+//                 // Commit the transaction
+//                 await session.commitTransaction();
+//                 session.endSession();
+
+//                 return res.status(200).json({
+//                     message: 'Pre-closer details updated successfully',
+//                     isActive: user.loanDetails.isActive,
+//                     receiptNumber
+//                 });
+
+//             } catch (error) {
+//                 await session.abortTransaction();
+//                 session.endSession();
+//                 throw error;
+//             }
+//         }
+
+//         return res.status(400).json({ error: 'Invalid action specified' });
+
+//     } catch (error) {
+//         console.error('Error managing pre-closer:', error);
+//         return res.status(500).json({ error: 'Internal server error' });
+//     }
+// };
+
+// async function updateLedgerModel(user, preCloserPrincipleAmount, preCloserInterestAmount, preCloserOverDue, preCloserTotalAmount, paymentMethod, userId, companyId) {
+//     try {
+//         const highestReceiptEntry = await ledgerModel.findOne({}).sort({ receiptNumberHid: -1 });
+//         const newReceiptNumberHid = highestReceiptEntry ? highestReceiptEntry.receiptNumberHid + 1 : 1;
+//         const receiptNumber = `C-${newReceiptNumberHid}`;
+
+//         const ledgerEntry = new ledgerModel({
+//             isLoanCredit: true,
+//             loanNumber: user.loanNumber,
+//             receiptNumber,
+//             receiptNumberHid: newReceiptNumberHid,
+//             principle: preCloserPrincipleAmount,
+//             intrest: preCloserInterestAmount,
+//             overDue: preCloserOverDue,
+//             total: preCloserTotalAmount,
+//             creditOrDebit: 'Credit',
+//             paymentMethod:'cash',
+//             createdBy: userId, // Set the createdBy field to the userId
+//             company: companyId 
+//         });
+
+//         await ledgerEntry.save();
+//         return receiptNumber;
+
+//     } catch (error) {
+//         console.error(error);
+//         throw new Error('Error updating ledger model');
+//     }
+// }
+
+
+
 exports.managePrecloser = async (req, res) => {
     const { loanNumber } = req.params;
-    const { date, OverdueforPrecloser, forceCloseApproverName, action, paymentMethod = 'cash'} = req.body;
+    const { date, OverdueforPrecloser, forceCloseApproverName, action, paymentMethod = 'cash' } = req.body;
     const companyId = req.companyId; // Assuming companyId is available in the request object
     const userId = req.userId; // Assuming userId is available in the request object
-    console.log(userId)
+    console.log(userId);
+
     try {
         // Find the user by loan number
-        const user = await UserModel.findOne({ loanNumber });
+        const user = await loanModel.findOne({ loanNumber });
 
         // Check if the user exists
         if (!user) {
@@ -282,7 +448,6 @@ exports.managePrecloser = async (req, res) => {
 
             // Calculate sums for installments
             for (const installment of user.loanDetails.instalmentObject) {
-                
                 if (installment.isPaid) {
                     sumOfPaidInstallments += installment.principleAmountCurrentMonth;
                 } else {
@@ -294,7 +459,6 @@ exports.managePrecloser = async (req, res) => {
             preCloserPrincipleAmount = Math.round(sumOfUnpaidInstallmentsEmi);
             preCloserInterestAmount = sumOfUnpaidInstallmentsInterest;
             preCloserTotalAmount = Math.round(preCloserPrincipleAmount + preCloserInterestAmount);
-
         } else {
             const variable = user.loanDetails.totalPrincipalAmount * 0.036; // 3.6% of totalPrincipalAmount
             preCloserTotalAmount = (variable * 3) + user.loanDetails.totalPrincipalAmount - user.loanDetails.totalEmiAlreadyPaid;
@@ -324,7 +488,7 @@ exports.managePrecloser = async (req, res) => {
             }
 
             // Start a session for transactional updates
-            const session = await UserModel.startSession();
+            const session = await loanModel.startSession();
             session.startTransaction();
 
             try {
@@ -348,10 +512,26 @@ exports.managePrecloser = async (req, res) => {
                     user.loanDetails.forceCloseApproverName = forceCloseApproverName;
                 }
 
+                // Update last installment data
+                const lastInstallmentNo = user.loanDetails.instalmentObject[user.loanDetails.instalmentObject.length - 1]; // Get last installment
+                const updatedInstallmentData = {
+                    preCloserTotalAmount: preCloserTotalAmount - user.loanDetails.totalEmiAmount,
+                    preCloserPrincipleAmount: preCloserPrincipleAmount - user.loanDetails.totalPrincipalAmount,
+                    preCloserInterestAmount: preCloserInterestAmount - user.loanDetails.totalEmiAlreadyPaid,
+                    isPaid: true,
+                    paidDate: providedDate,
+                    emiPaid: preCloserTotalAmount,
+                    updatedBy: userId, // Assuming `userId` is the ID of the updater
+                };
+                   Object.assign(lastInstallmentNo, updatedInstallmentData);
+                // lastInstallmentNo = { ...lastInstallmentNo, ...updatedInstallmentData }; // Merge old and new data
+                await user.save({ session });
+
                 await user.save({ session });
 
                 // Update ledger model
                 const receiptNumber = await updateLedgerModel(user, preCloserPrincipleAmount, preCloserInterestAmount, user.loanDetails.preCloser.preCloserOverDue, preCloserTotalAmount, paymentMethod, userId, companyId);
+
 
                 // Commit the transaction
                 await session.commitTransaction();
@@ -362,7 +542,6 @@ exports.managePrecloser = async (req, res) => {
                     isActive: user.loanDetails.isActive,
                     receiptNumber
                 });
-
             } catch (error) {
                 await session.abortTransaction();
                 session.endSession();
@@ -394,22 +573,26 @@ async function updateLedgerModel(user, preCloserPrincipleAmount, preCloserIntere
             overDue: preCloserOverDue,
             total: preCloserTotalAmount,
             creditOrDebit: 'Credit',
-            paymentMethod:'cash',
-            createdBy: userId, // Set the createdBy field to the userId
-            company: companyId 
+            paymentMethod: 'cash',
+            createdBy: userId,
+            company: companyId
         });
 
         await ledgerEntry.save();
-        return receiptNumber;
 
+        // Update the receipt number for the last installment in instalmentObject
+        const lastInstallment = user.loanDetails.instalmentObject[user.loanDetails.instalmentObject.length - 1];
+        if (lastInstallment) {
+            lastInstallment.receiptNumber = receiptNumber;
+            await user.save(); // Save the updated loanModel document
+        }
+
+        return receiptNumber;
     } catch (error) {
         console.error(error);
         throw new Error('Error updating ledger model');
     }
 }
-
-
-
 
 
 
