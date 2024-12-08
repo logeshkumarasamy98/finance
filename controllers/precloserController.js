@@ -463,8 +463,15 @@ exports.managePrecloser = async (req, res) => {
             const variable = user.loanDetails.totalPrincipalAmount * 0.036; // 3.6% of totalPrincipalAmount
             preCloserTotalAmount = (variable * 3) + user.loanDetails.totalPrincipalAmount - user.loanDetails.totalEmiAlreadyPaid;
 
-            preCloserPrincipleAmount = user.loanDetails.totalPrincipalAmount;
-            preCloserInterestAmount = Math.round(variable * 3);
+            let sumOfUnpaidPrincipleAmount = 0;
+
+            for (const installment of user.loanDetails.instalmentObject) {
+                if (!installment.isPaid) {
+                    sumOfUnpaidPrincipleAmount += installment.principleAmountCurrentMonth || 0;
+                }
+            }
+            preCloserPrincipleAmount = sumOfUnpaidPrincipleAmount;
+            preCloserInterestAmount = preCloserTotalAmount - sumOfUnpaidPrincipleAmount ;
         }
 
         // If the action is only to calculate
@@ -515,9 +522,8 @@ exports.managePrecloser = async (req, res) => {
                 // Update last installment data
                 const lastInstallmentNo = user.loanDetails.instalmentObject[user.loanDetails.instalmentObject.length - 1]; // Get last installment
                 const updatedInstallmentData = {
-                    preCloserTotalAmount: preCloserTotalAmount - user.loanDetails.totalEmiAmount,
-                    preCloserPrincipleAmount: preCloserPrincipleAmount - user.loanDetails.totalPrincipalAmount,
-                    preCloserInterestAmount: preCloserInterestAmount - user.loanDetails.totalEmiAlreadyPaid,
+                    interestAmount: preCloserInterestAmount,
+                    principleAmountPaid: preCloserPrincipleAmount,
                     isPaid: true,
                     paidDate: providedDate,
                     emiPaid: preCloserTotalAmount,
@@ -525,8 +531,6 @@ exports.managePrecloser = async (req, res) => {
                 };
                    Object.assign(lastInstallmentNo, updatedInstallmentData);
                 // lastInstallmentNo = { ...lastInstallmentNo, ...updatedInstallmentData }; // Merge old and new data
-                await user.save({ session });
-
                 await user.save({ session });
 
                 // Update ledger model
