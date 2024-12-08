@@ -945,6 +945,7 @@ exports.getPendingEmiDetails = async (req, res) => {
                     "loanBalance": "$loanDetails.totalEmiBalance",
                     "mobileNum1": "$details.loanPayerDetails.mobileNum1",
                     "vehicalNum": "$details.vehicle.vehicleNumber",
+                    "pendingEmiNum": "$loanDetails.pendingEmiNum",
                     "vehicalType": "$details.vehicle.type",
                     "vehicalModel": "$details.vehicle.model",
                     "company": 1 // Including company field in the projection
