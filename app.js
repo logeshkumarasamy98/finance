@@ -49,6 +49,7 @@ const filterDashboardRouter = express.Router();
 filterDashboardRouter.get('/activeLoanPayer', filterDashboard.activeLoanPayer);
 filterDashboardRouter.get('/vehicleTypePercentage', filterDashboard.vehicleTypePercentage);
 filterDashboardRouter.get('/LoanPayerDetails/:loanNumber', filterDashboard.LoanPayerDetails);
+filterDashboardRouter.get('/getLoanDetailsByPhoneNumber/:mobileNumber', filterDashboard.getLoanDetailsByPhoneNumber);
 filterDashboardRouter.get('/getPendingEmiDetails', filterDashboard.getPendingEmiDetails);
 filterDashboardRouter.get('/pendingEmiPayerLength', filterDashboard.pendingEmiPayerLength);
 filterDashboardRouter.get('/ledgerDatas', filterDashboard.ledgerDatas);
@@ -60,6 +61,7 @@ filterDashboardRouter.get('/closedLoanPayerLength', filterDashboard.closedLoanPa
 filterDashboardRouter.get('/seizedLoanPayerLength', filterDashboard.seizedLoanPayerLength);
 filterDashboardRouter.get('/seizedLoanPayer', filterDashboard.seizedLoanPayer);
 filterDashboardRouter.get('/downloadPendingEmiDetails', filterDashboard.downloadPendingEmiDetails);
+filterDashboardRouter.get('/getLoanDataLengths', filterDashboard.getLoanDataLengths);
 
 // Define auth routes
 const authRouter = express.Router();
@@ -70,8 +72,9 @@ authRouter.post('/createCompany', authController.createCompany);
 app.post('/ledger/expense', auth, ledgerController.expense);
 app.post('/ledger/investment', auth, ledgerController.investment);
 
-app.patch('/UpdatePrecloser/:loanNumber', precloserController.UpdatePrecloser);
-app.post('/calculate-pre-closer/:loanNumber', precloserController.calculate_pre_closer);
+// app.patch('/UpdatePrecloser/:loanNumber', precloserController.UpdatePrecloser);
+// app.post('/calculate-pre-closer/:loanNumber', precloserController.calculate_pre_closer);
+app.post('/managePrecloser/:loanNumber', auth, precloserController.managePrecloser)
 
 // Mount routers
 app.use('/api/loan', auth, loanRouter);

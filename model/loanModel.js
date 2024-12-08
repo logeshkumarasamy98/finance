@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
         isActive: { type: Boolean, required: true },
         isSeized: { type: Boolean, required: true },
         isDocumentSettled: { type: Boolean, required: true },
-        instalment: { type: Number, required: [true, 'installment required'], min: [6, 'Minimum 8 months required'], max: [40, 'Max number exceed'] },
+        instalment: { type: Number, required: [true, 'installment required'], min: [3, 'Minimum 8 months required'], max: [40, 'Max number exceed'] },
         totalPrincipalAmount: { type: Number, required: true, min: [3000, 'Minimum 3000 required'], max: [1000000, 'Max number exceed'] },
         interestRate: { type: Number, required: true, max: [10, 'Max number exceed'] },
         startDate: { type: Date, required: true },

@@ -320,6 +320,7 @@ exports.deleteLoan = async (req, res) => {
     }
 };
 
+
 // exports.getUsers = async(req, res)=>{
 //     try{
 //       const loanNumber = req.params.loanNumber;

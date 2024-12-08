@@ -512,6 +512,7 @@
 const ledgerModel = require('../model/ledgerModel');
 const loanModel = require('../model/loanModel');
 const xlsx = require('xlsx');
+const mongoose = require('mongoose');
 
 exports.activeLoanPayer = async (req, res) => {
     const companyId = req.companyId;
@@ -727,6 +728,50 @@ exports.LoanPayerDetails = async (req, res) => {
     }
 };
 
+exports.getLoanDetailsByPhoneNumber = async (req, res) => {
+    const { mobileNumber } = req.params; // Extract the phone number from the route parameters
+    const companyId = req.companyId; // Extract companyId from the request
+
+    try {
+        // Perform aggregation to filter by phone number
+        let loanData = await loanModel.aggregate([
+            {
+                $match: {
+                    "details.loanPayerDetails.mobileNum1": parseInt(mobileNumber) // Match the provided phone number
+                }
+            },
+            {
+                $project: {
+                    "loanNumber": "$loanNumber",
+                    "loanPayerName": "$details.loanPayerDetails.name",
+                    "loanBalance": "$loanDetails.totalEmiAmount",
+                    "mobileNum1": "$details.loanPayerDetails.mobileNum1",
+                    "vehicleNumber": "$details.vehicle.vehicleNumber",
+                    "vehicleType": "$details.vehicle.type",
+                    "vehicleModel": "$details.vehicle.model",
+                    "company": "$company"
+                }
+            }
+        ]);
+
+        console.log('Aggregated Data:', loanData);
+
+        // Filter results by companyId
+        loanData = loanData.filter(user => user.company && user.company.toString() === companyId);
+
+        res.status(200).json({
+            status: 'Success',
+            data: loanData
+        });
+    } catch (err) {
+        console.error('Error fetching loan details:', err);
+        res.status(500).json({
+            status: 'error',
+            message: 'Error fetching loan details by phone number.'
+        });
+    }
+};
+
 exports.pendingEmiPayerLength = async (req, res) => {
     const companyId = req.companyId;
     try {
@@ -808,6 +853,71 @@ exports.vehicleTypePercentage = async (req, res) => {
     }
 };
 
+// exports.getPendingEmiDetails = async (req, res) => {
+//     const companyId = req.companyId;
+//     try {
+//         let pendingEmiDetails = await loanModel.aggregate([
+//             { $match: { "loanDetails.emiPending": true } },
+//             {
+//                 $lookup: {
+//                     from: "usermodels",
+//                     localField: "details.loanPayerDetails.name",
+//                     foreignField: "details.loanPayerDetails.name",
+//                     as: "user"
+//                 }
+//             },
+//             { $unwind: "$loanDetails.instalmentObject" },
+//             {
+//                 $match: {
+//                     "loanDetails.instalmentObject.isPaid": false,
+//                     "loanDetails.instalmentObject.dueDate": { $lte: new Date() }
+//                 }
+//             },
+//             {
+//                 $group: {
+//                     _id: {
+//                         loanNumber: "$loanNumber",
+//                         loanPayerName: "$details.loanPayerDetails.name",
+//                         phoneNumber1: "$details.loanPayerDetails.mobileNum1",
+//                         pendingEmiNum: "$loanDetails.pendingEmiNum",
+//                         emiPendingDate: "$loanDetails.emiPendingDate",
+//                         company: "$company"
+//                     },
+//                     totalPrincipalAmount: { $sum: "$loanDetails.instalmentObject.principleAmountPerMonth" },
+//                     totalInterestAmount: { $sum: "$loanDetails.instalmentObject.interestAmount" },
+//                     totalEmiAmount: { $sum: "$loanDetails.instalmentObject.totalEmiAmountRoundoff" }
+//                 }
+//             },
+//             {
+//                 $project: {
+//                     _id: 0,
+//                     loanNumber: "$_id.loanNumber",
+//                     loanPayerName: "$_id.loanPayerName",
+//                     phoneNumber1: "$_id.phoneNumber1",
+//                     pendingEmiNum: "$_id.pendingEmiNum",
+//                     emiPendingDate: "$_id.emiPendingDate",
+//                     totalPrincipalAmount: 1,
+//                     totalInterestAmount: 1,
+//                     totalEmiAmount: 1,
+//                     company: "$_id.company"
+
+                    
+//                 }
+//             },
+//             { $sort: { pendingEmiNum: -1, emiPendingDate: 1 } }
+//         ]);
+
+//         // Filter pendingEmiDetails by companyId
+//         pendingEmiDetails = pendingEmiDetails.filter(user => user.company && user.company.toString() === companyId);
+
+//         res.status(200).json({ pendingEmiDetails });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ error: 'Internal server error' });
+//     }
+// };
+
+
 exports.getPendingEmiDetails = async (req, res) => {
     const companyId = req.companyId;
     try {
@@ -829,46 +939,40 @@ exports.getPendingEmiDetails = async (req, res) => {
                 }
             },
             {
-                $group: {
-                    _id: {
-                        loanNumber: "$loanNumber",
-                        loanPayerName: "$details.loanPayerDetails.name",
-                        phoneNumber1: "$details.loanPayerDetails.mobileNum1",
-                        pendingEmiNum: "$loanDetails.pendingEmiNum",
-                        emiPendingDate: "$loanDetails.emiPendingDate",
-                        company: "$company"
-                    },
-                    totalPrincipalAmount: { $sum: "$loanDetails.instalmentObject.principleAmountPerMonth" },
-                    totalInterestAmount: { $sum: "$loanDetails.instalmentObject.interestAmount" },
-                    totalEmiAmount: { $sum: "$loanDetails.instalmentObject.totalEmiAmountRoundoff" }
-                }
-            },
-            {
                 $project: {
-                    _id: 0,
-                    loanNumber: "$_id.loanNumber",
-                    loanPayerName: "$_id.loanPayerName",
-                    phoneNumber1: "$_id.phoneNumber1",
-                    pendingEmiNum: "$_id.pendingEmiNum",
-                    emiPendingDate: "$_id.emiPendingDate",
-                    totalPrincipalAmount: 1,
-                    totalInterestAmount: 1,
-                    totalEmiAmount: 1,
-                    company: "$_id.company"
+                    "loanNumber": 1,
+                    "loanPayerName": "$details.loanPayerDetails.name",
+                    "loanBalance": "$loanDetails.totalEmiBalance",
+                    "mobileNum1": "$details.loanPayerDetails.mobileNum1",
+                    "vehicalNum": "$details.vehicle.vehicleNumber",
+                    "pendingEmiNum": "$loanDetails.pendingEmiNum",
+                    "vehicalType": "$details.vehicle.type",
+                    "vehicalModel": "$details.vehicle.model",
+                    "company": 1 // Including company field in the projection
+  
                 }
             },
-            { $sort: { pendingEmiNum: -1, emiPendingDate: 1 } }
+            { $sort: { "loanDetails.pendingEmiNum": -1, "loanDetails.emiPendingDate": 1 } }
         ]);
 
         // Filter pendingEmiDetails by companyId
         pendingEmiDetails = pendingEmiDetails.filter(user => user.company && user.company.toString() === companyId);
 
-        res.status(200).json({ pendingEmiDetails });
+        
+
+        res.status(200).json({
+            status: 'Success',
+            length: pendingEmiDetails.length,
+            data: pendingEmiDetails
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+
+
 
 const parseDate = (dateStr) => {
     const [day, month, year] = dateStr.split('/');
@@ -992,11 +1096,21 @@ exports.ledgerDatas = (req, res) => {
 //         });
 // };
 
+
+
+
+
 exports.getOverDueUsers = async (req, res) => {
-    const companyId = req.companyId;
+    const companyId = req.companyId; // Assuming `req.companyId` contains the company's ObjectId as a string.
     try {
-        let pendingEmiDetails = await loanModel.aggregate([
-            { $match: { "loanDetails.totalOverdueAmountToBePaid": { $gt: 0 } } },
+        const pendingEmiDetails = await loanModel.aggregate([
+            {
+                $match: {
+                    "loanDetails.totalOverdueAmountToBePaid": { $gt: 0 }, // Filter by overdue amount
+                    "loanDetails.isActive": true,                        // Filter by active status
+                    "company": new mongoose.Types.ObjectId(companyId),  // Corrected ObjectId instantiation
+                }
+            },
             {
                 $project: {
                     loanNumber: "$loanNumber",
@@ -1006,19 +1120,19 @@ exports.getOverDueUsers = async (req, res) => {
                     vehicalNum: "$details.vehicle.vehicleNumber",
                     vehicalType: "$details.vehicle.type",
                     vehicalModel: "$details.vehicle.model",
-                    company: "$company"
+                    company: "$company",
                 }
             }
         ]);
 
-        pendingEmiDetails = pendingEmiDetails.filter(user => user.company && user.company.toString() === companyId);
-
-        res.status(200).json({ pendingEmiDetails, length: pendingEmiDetails.length });
+        res.status(200).json({ success: true, data: pendingEmiDetails });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error("Error fetching overdue users:", error);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 };
+
+
 
 exports.getOverDueLength = async (req, res) => {
     const companyId = req.companyId;
@@ -1110,3 +1224,52 @@ exports.downloadPendingEmiDetails = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+
+exports.getLoanDataLengths = async (req, res) => {
+    const companyId = req.companyId;
+
+    try {
+        // Fetch all data in parallel
+        const [
+            pendingEmiData,
+            overdueData,
+            closedLoanData,
+            seizedLoanData,
+            activeLoanData
+        ] = await Promise.all([
+            loanModel.aggregate([{ $match: { "loanDetails.emiPending": true } }]), // Pending EMI
+            loanModel.aggregate([{ $match: { "loanDetails.totalOverdueAmountToBePaid": { $gt: 0 } } }]), // Overdue
+            loanModel.aggregate([{ $match: { "loanDetails.isActive": false } }]), // Closed Loans
+            loanModel.aggregate([{ $match: { "loanDetails.isSeized": true } }]), // Seized Loans
+            loanModel.aggregate([{ $match: { "loanDetails.isActive": true } }]), // Active Loans
+        ]);
+
+        // Filter data for the specific company
+        const filterByCompanyId = users => 
+            users.filter(user => user.company && user.company.toString() === companyId);
+
+        // Calculate lengths
+        const lengths = {
+            pendingEmi: filterByCompanyId(pendingEmiData).length,
+            overdue: filterByCompanyId(overdueData).length,
+            closedLoan: filterByCompanyId(closedLoanData).length,
+            seizedLoan: filterByCompanyId(seizedLoanData).length,
+            activeLoan: filterByCompanyId(activeLoanData).length,
+        };
+
+        // Send response
+        res.status(200).json({
+            status: 'Success',
+            data: lengths
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            status: 'error',
+            message: 'An error occurred while fetching loan data lengths.'
+        });
+    }
+};
+
