@@ -3,7 +3,7 @@ on:
     branches:
       - main
   workflow_dispatch:
-  
+
 jobs:
   run_pull:
     name: run pull
@@ -11,13 +11,13 @@ jobs:
     
     steps:
     - name: install ssh keys
-      # check this thread to understand why its needed:
-      # https://stackoverflow.com/a/70447517
       run: |
-        install -m 600 -D /dev/null ~/.ssh/id_rsa
+        mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        ssh-keyscan -H 100.108.54.125 > ~/.ssh/known_hosts
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H 100.108.54.125 >> ~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
     - name: connect and pull
-      run: ssh logesh@100.108.54.125 "mkdir -p /home/logesh/testdirectory && touch /home/logesh/testdirectory/testfile.txt && exit"
+      run: ssh -o StrictHostKeyChecking=no logesh@100.108.54.125 "mkdir -p /home/logesh/testdirectory && touch /home/logesh/testdirectory/testfile.txt && exit"
     - name: cleanup
       run: rm -rf ~/.ssh
