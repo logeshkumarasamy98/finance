@@ -853,6 +853,71 @@ exports.vehicleTypePercentage = async (req, res) => {
     }
 };
 
+// exports.getPendingEmiDetails = async (req, res) => {
+//     const companyId = req.companyId;
+//     try {
+//         let pendingEmiDetails = await loanModel.aggregate([
+//             { $match: { "loanDetails.emiPending": true } },
+//             {
+//                 $lookup: {
+//                     from: "usermodels",
+//                     localField: "details.loanPayerDetails.name",
+//                     foreignField: "details.loanPayerDetails.name",
+//                     as: "user"
+//                 }
+//             },
+//             { $unwind: "$loanDetails.instalmentObject" },
+//             {
+//                 $match: {
+//                     "loanDetails.instalmentObject.isPaid": false,
+//                     "loanDetails.instalmentObject.dueDate": { $lte: new Date() }
+//                 }
+//             },
+//             {
+//                 $group: {
+//                     _id: {
+//                         loanNumber: "$loanNumber",
+//                         loanPayerName: "$details.loanPayerDetails.name",
+//                         phoneNumber1: "$details.loanPayerDetails.mobileNum1",
+//                         pendingEmiNum: "$loanDetails.pendingEmiNum",
+//                         emiPendingDate: "$loanDetails.emiPendingDate",
+//                         company: "$company"
+//                     },
+//                     totalPrincipalAmount: { $sum: "$loanDetails.instalmentObject.principleAmountPerMonth" },
+//                     totalInterestAmount: { $sum: "$loanDetails.instalmentObject.interestAmount" },
+//                     totalEmiAmount: { $sum: "$loanDetails.instalmentObject.totalEmiAmountRoundoff" }
+//                 }
+//             },
+//             {
+//                 $project: {
+//                     _id: 0,
+//                     loanNumber: "$_id.loanNumber",
+//                     loanPayerName: "$_id.loanPayerName",
+//                     phoneNumber1: "$_id.phoneNumber1",
+//                     pendingEmiNum: "$_id.pendingEmiNum",
+//                     emiPendingDate: "$_id.emiPendingDate",
+//                     totalPrincipalAmount: 1,
+//                     totalInterestAmount: 1,
+//                     totalEmiAmount: 1,
+//                     company: "$_id.company"
+
+                    
+//                 }
+//             },
+//             { $sort: { pendingEmiNum: -1, emiPendingDate: 1 } }
+//         ]);
+
+//         // Filter pendingEmiDetails by companyId
+//         pendingEmiDetails = pendingEmiDetails.filter(user => user.company && user.company.toString() === companyId);
+
+//         res.status(200).json({ pendingEmiDetails });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ error: 'Internal server error' });
+//     }
+// };
+
+
 exports.getPendingEmiDetails = async (req, res) => {
     const companyId = req.companyId;
     try {
@@ -874,35 +939,18 @@ exports.getPendingEmiDetails = async (req, res) => {
                 }
             },
             {
-                $group: {
-                    _id: {
-                        loanNumber: "$loanNumber",
-                        loanPayerName: "$details.loanPayerDetails.name",
-                        phoneNumber1: "$details.loanPayerDetails.mobileNum1",
-                        pendingEmiNum: "$loanDetails.pendingEmiNum",
-                        emiPendingDate: "$loanDetails.emiPendingDate",
-                        company: "$company"
-                    },
-                    totalPrincipalAmount: { $sum: "$loanDetails.instalmentObject.principleAmountPerMonth" },
-                    totalInterestAmount: { $sum: "$loanDetails.instalmentObject.interestAmount" },
-                    totalEmiAmount: { $sum: "$loanDetails.instalmentObject.totalEmiAmountRoundoff" }
-                }
-            },
-            {
                 $project: {
-                    _id: 0,
-                    loanNumber: "$_id.loanNumber",
-                    loanPayerName: "$_id.loanPayerName",
-                    phoneNumber1: "$_id.phoneNumber1",
-                    pendingEmiNum: "$_id.pendingEmiNum",
-                    emiPendingDate: "$_id.emiPendingDate",
-                    totalPrincipalAmount: 1,
-                    totalInterestAmount: 1,
-                    totalEmiAmount: 1,
-                    company: "$_id.company"
+                    "loanNumber": "$loanNumber",
+                    "loanPayerName": "$details.loanPayerDetails.name",
+                    "loanBalance": "$loanDetails.totalEmiAmount",
+                    "mobileNum1": "$details.loanPayerDetails.mobileNum1",
+                    "vehicleNumber": "$details.vehicle.vehicleNumber",
+                    "vehicleType": "$details.vehicle.type",
+                    "vehicleModel": "$details.vehicle.model",
+                    "company": "$company"
                 }
             },
-            { $sort: { pendingEmiNum: -1, emiPendingDate: 1 } }
+            { $sort: { "loanDetails.pendingEmiNum": -1, "loanDetails.emiPendingDate": 1 } }
         ]);
 
         // Filter pendingEmiDetails by companyId
@@ -914,6 +962,9 @@ exports.getPendingEmiDetails = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+
+
 
 const parseDate = (dateStr) => {
     const [day, month, year] = dateStr.split('/');
