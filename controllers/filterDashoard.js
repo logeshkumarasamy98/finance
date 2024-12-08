@@ -940,14 +940,15 @@ exports.getPendingEmiDetails = async (req, res) => {
             },
             {
                 $project: {
-                    "loanNumber": "$loanNumber",
+                    "loanNumber": 1,
                     "loanPayerName": "$details.loanPayerDetails.name",
-                    "loanBalance": "$loanDetails.totalEmiAmount",
+                    "loanBalance": "$loanDetails.totalEmiBalance",
                     "mobileNum1": "$details.loanPayerDetails.mobileNum1",
-                    "vehicleNumber": "$details.vehicle.vehicleNumber",
-                    "vehicleType": "$details.vehicle.type",
-                    "vehicleModel": "$details.vehicle.model",
-                    "company": "$company"
+                    "vehicalNum": "$details.vehicle.vehicleNumber",
+                    "vehicalType": "$details.vehicle.type",
+                    "vehicalModel": "$details.vehicle.model",
+                    "company": 1 // Including company field in the projection
+  
                 }
             },
             { $sort: { "loanDetails.pendingEmiNum": -1, "loanDetails.emiPendingDate": 1 } }
@@ -956,7 +957,13 @@ exports.getPendingEmiDetails = async (req, res) => {
         // Filter pendingEmiDetails by companyId
         pendingEmiDetails = pendingEmiDetails.filter(user => user.company && user.company.toString() === companyId);
 
-        res.status(200).json({ pendingEmiDetails });
+        
+
+        res.status(200).json({
+            status: 'Success',
+            length: pendingEmiDetails.length,
+            data: pendingEmiDetails
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
