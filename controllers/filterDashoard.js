@@ -1357,16 +1357,16 @@ exports.getLoanDataLengths = async (req, res) => {
 };
 
 
-
 exports.calculateUnpaidPrincipleSum = async (req, res) => {
     const companyId = req.companyId;
 
     try {
-        // Aggregate the sum of unpaid principal amounts for the specified companyId
+        // Aggregate the sum of unpaid principal amounts for the specified companyId and active loans
         const result = await loanModel.aggregate([
             {
                 $match: {
-                    company: new mongoose.Types.ObjectId(companyId) // Use `new` for ObjectId
+                    company: new mongoose.Types.ObjectId(companyId),
+                    "loanDetails.isActive": true // Filter for active loans
                 }
             },
             {

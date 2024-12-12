@@ -13,8 +13,8 @@ const filterDashboard = require('./controllers/filterDashoard');
 const { verifyToken } = require('./customFunctions/authFunction');
 const { updateLoanDetails } = require('./customFunctions/loanFunctions');
 const ledgerModel = require('./model/ledgerModel');
-const jwt = require('jsonwebtoken');
-const Company = require('./model/company');
+
+
 
 // CORS options
 const corsOptions = {
