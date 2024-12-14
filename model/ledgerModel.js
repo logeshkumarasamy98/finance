@@ -6,7 +6,7 @@ const ledgerSchema = new Schema({
     isInvestment: { type: Boolean, default: false },
     isLoanDebit: { type: Boolean, default: false },
     isLoanCredit: { type: Boolean, default: false },
-    paymentMethod: { type: String, enum: ['cash', 'AC'], default: null },
+    paymentMethod: { type: String, enum: ['cash', 'account'], default: null },
     creditOrDebit: { type: String, enum: ['Credit', 'Debit'], default: null },
     entryDate: { type: Date, default: Date.now },
     loanNumber: { type: Number, default: null },
