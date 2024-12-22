@@ -20,7 +20,7 @@ const ledgerModel = require('./model/ledgerModel');
 const corsOptions = {
   origin: function (origin, callback) {
     // List of allowed origins
-    const allowedOrigins = ['http://localhost:3000', 'http://localhost:80', 'http://logesh.store', 'https://wwww.logesh.store'];
+    const allowedOrigins = ['http://localhost:3000', 'http://localhost:80', 'http://logesh.store', 'https://logesh.store'];
 
     if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
       callback(null, true);
