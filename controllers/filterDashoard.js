@@ -1321,112 +1321,52 @@ exports.downloadPendingEmiDetails = async (req, res) => {
 };
 
 
-// exports.getLoanDataLengths = async (req, res) => {
-//   const companyId = req.companyId;
-
-//     try {
-//         // Fetch all data in parallel
-//         const [
-//             pendingEmiData,
-//             overdueData,
-//             closedLoanData,
-//             seizedLoanData,
-//             activeLoanData
-//         ] = await Promise.all([
-//             loanModel.aggregate([{ $match: { "loanDetails.emiPending": true, "loanDetails.isActive": true } }]),
-//             loanModel.aggregate([{ $match: { "loanDetails.totalOverdueAmountToBePaid": { $gt: 0 } } }]), // Overdue
-//             loanModel.aggregate([{ $match: { "loanDetails.isActive": false } }]), // Closed Loans
-//             loanModel.aggregate([{ $match: { "loanDetails.isSeized": true } }]), // Seized Loans
-//             loanModel.aggregate([{ $match: { "loanDetails.isActive": true } }]), // Active Loans
-//         ]);
-
-//         // Filter data for the specific company
-//         const filterByCompanyId = users => 
-//             users.filter(user => user.company && user.company.toString() === companyId);
-
-//         // Calculate lengths
-//         const lengths = {
-//             pendingEmi: filterByCompanyId(pendingEmiData).length,
-//             overdue: filterByCompanyId(overdueData).length,
-//             closedLoan: filterByCompanyId(closedLoanData).length,
-//             seizedLoan: filterByCompanyId(seizedLoanData).length,
-//             activeLoan: filterByCompanyId(activeLoanData).length,
-//         };
-
-//     // Send response
-//     res.status(200).json({
-//       status: "Success",
-//       data: lengths,
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({
-//       status: "error",
-//       message: "An error occurred while fetching loan data lengths.",
-//     });
-//   }
-// };
-
-
 exports.getLoanDataLengths = async (req, res) => {
-    const companyId = req.companyId;
+  const companyId = req.companyId;
 
     try {
-        // Fetch counts in parallel with companyId filtering at the database level
+        // Fetch all data in parallel
         const [
-            pendingEmiCount,
-            overdueCount,
-            closedLoanCount,
-            seizedLoanCount,
-            activeLoanCount
+            pendingEmiData,
+            overdueData,
+            closedLoanData,
+            seizedLoanData,
+            activeLoanData
         ] = await Promise.all([
-            loanModel.aggregate([
-                { $match: { "loanDetails.emiPending": true, "loanDetails.isActive": true, "company": companyId } },
-                { $count: "count" }
-            ]),
-            loanModel.aggregate([
-                { $match: { "loanDetails.totalOverdueAmountToBePaid": { $gt: 0 }, "company": companyId } },
-                { $count: "count" }
-            ]),
-            loanModel.aggregate([
-                { $match: { "loanDetails.isActive": false, "company": companyId } },
-                { $count: "count" }
-            ]),
-            loanModel.aggregate([
-                { $match: { "loanDetails.isSeized": true, "company": companyId } },
-                { $count: "count" }
-            ]),
-            loanModel.aggregate([
-                { $match: { "loanDetails.isActive": true, "company": companyId } },
-                { $count: "count" }
-            ]),
+            loanModel.aggregate([{ $match: { "loanDetails.emiPending": true, "loanDetails.isActive": true } }]),
+            loanModel.aggregate([{ $match: { "loanDetails.totalOverdueAmountToBePaid": { $gt: 0 } } }]), // Overdue
+            loanModel.aggregate([{ $match: { "loanDetails.isActive": false } }]), // Closed Loans
+            loanModel.aggregate([{ $match: { "loanDetails.isSeized": true } }]), // Seized Loans
+            loanModel.aggregate([{ $match: { "loanDetails.isActive": true } }]), // Active Loans
         ]);
 
-        // Extract counts (if the result is empty, the count is 0)
-        const extractCount = (data) => (data[0] ? data[0].count : 0);
+        // Filter data for the specific company
+        const filterByCompanyId = users => 
+            users.filter(user => user.company && user.company.toString() === companyId);
 
+        // Calculate lengths
         const lengths = {
-            pendingEmi: extractCount(pendingEmiCount),
-            overdue: extractCount(overdueCount),
-            closedLoan: extractCount(closedLoanCount),
-            seizedLoan: extractCount(seizedLoanCount),
-            activeLoan: extractCount(activeLoanCount),
+            pendingEmi: filterByCompanyId(pendingEmiData).length,
+            overdue: filterByCompanyId(overdueData).length,
+            closedLoan: filterByCompanyId(closedLoanData).length,
+            seizedLoan: filterByCompanyId(seizedLoanData).length,
+            activeLoan: filterByCompanyId(activeLoanData).length,
         };
 
-        // Send response
-        res.status(200).json({
-            status: 'Success',
-            data: lengths
-        });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({
-            status: 'error',
-            message: 'An error occurred while fetching loan data lengths.'
-        });
-    }
+    // Send response
+    res.status(200).json({
+      status: "Success",
+      data: lengths,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      status: "error",
+      message: "An error occurred while fetching loan data lengths.",
+    });
+  }
 };
+
 
 exports.calculateUnpaidPrincipleSum = async (req, res) => {
   const companyId = req.companyId;
