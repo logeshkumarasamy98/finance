@@ -1237,11 +1237,82 @@ exports.getOverDueLength = async (req, res) => {
 };
 
 
+// exports.downloadPendingEmiDetails = async (req, res) => {
+//     const companyId = req.companyId;
+//     try {
+//         let pendingEmiDetails = await loanModel.aggregate([
+//             { $match: { "loanDetails.emiPending": true } },
+//             {
+//                 $lookup: {
+//                     from: "usermodels",
+//                     localField: "details.loanPayerDetails.name",
+//                     foreignField: "details.loanPayerDetails.name",
+//                     as: "user"
+//                 }
+//             },
+//             { $unwind: "$loanDetails.instalmentObject" },
+//             {
+//                 $match: {
+//                     "loanDetails.instalmentObject.isPaid": false,
+//                     "loanDetails.instalmentObject.dueDate": { $lte: new Date() }
+//                 }
+//             },
+//             {
+//                 $group: {
+//                     _id: {
+//                         loanNumber: "$loanNumber",
+//                         loanPayerName: "$details.loanPayerDetails.name",
+//                         phoneNumber1: "$details.loanPayerDetails.mobileNum1",
+//                         pendingEmiNum: "$loanDetails.pendingEmiNum",
+//                         emiPendingDate: "$loanDetails.emiPendingDate",
+//                         totalEmiAmountRoundoff: "$loanDetails.instalmentObject.totalEmiAmountRoundoff",
+//                         company: "$company"
+//                     }
+//                 }
+//             },
+//             {
+//                 $project: {
+//                     _id: 0,
+//                     loanNumber: "$_id.loanNumber",
+//                     loanPayerName: "$_id.loanPayerName",
+//                     phoneNumber1: "$_id.phoneNumber1",
+//                     pendingEmiNum: "$_id.pendingEmiNum",
+//                     emiPendingDate: "$_id.emiPendingDate",
+//                     totalEmiAmountRoundoff: "$_id.totalEmiAmountRoundoff",
+//                     company: "$_id.company"
+//                 }
+//             },
+//             { $sort: { "emiPendingDate": 1 } }
+//         ]);
+
+//         // Filter pendingEmiDetails by companyId
+//         pendingEmiDetails = pendingEmiDetails.filter(user => user.company && user.company.toString() === companyId);
+
+//         // Create a new workbook and worksheet
+//         const workbook = xlsx.utils.book_new();
+//         const worksheet = xlsx.utils.json_to_sheet(pendingEmiDetails);
+
+//         // Append the worksheet to the workbook
+//         xlsx.utils.book_append_sheet(workbook, worksheet, 'Pending EMI Details');
+
+//         // Write the workbook to a buffer
+//         const buffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+//         // Set headers and send the buffer as a file
+//         res.setHeader('Content-Disposition', 'attachment; filename=pending_emi_details.xlsx');
+//         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+//         res.send(buffer);
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ error: 'Internal server error' });
+//     }
+// };
+
+
 exports.downloadPendingEmiDetails = async (req, res) => {
-    const companyId = req.companyId;
     try {
         let pendingEmiDetails = await loanModel.aggregate([
-            { $match: { "loanDetails.emiPending": true } },
+            { $match: { "loanDetails.emiPending": true, "loanDetails.isActive": true } }, // Filter by emiPending and isActive
             {
                 $lookup: {
                     from: "usermodels",
@@ -1265,8 +1336,7 @@ exports.downloadPendingEmiDetails = async (req, res) => {
                         phoneNumber1: "$details.loanPayerDetails.mobileNum1",
                         pendingEmiNum: "$loanDetails.pendingEmiNum",
                         emiPendingDate: "$loanDetails.emiPendingDate",
-                        totalEmiAmountRoundoff: "$loanDetails.instalmentObject.totalEmiAmountRoundoff",
-                        company: "$company"
+                        totalEmiAmountRoundoff: "$loanDetails.instalmentObject.totalEmiAmountRoundoff"
                     }
                 }
             },
@@ -1278,19 +1348,21 @@ exports.downloadPendingEmiDetails = async (req, res) => {
                     phoneNumber1: "$_id.phoneNumber1",
                     pendingEmiNum: "$_id.pendingEmiNum",
                     emiPendingDate: "$_id.emiPendingDate",
-                    totalEmiAmountRoundoff: "$_id.totalEmiAmountRoundoff",
-                    company: "$_id.company"
+                    totalEmiAmountRoundoff: "$_id.totalEmiAmountRoundoff"
                 }
             },
-            { $sort: { "emiPendingDate": 1 } }
+            { $sort: { emiPendingDate: 1 } }
         ]);
-
-        // Filter pendingEmiDetails by companyId
-        pendingEmiDetails = pendingEmiDetails.filter(user => user.company && user.company.toString() === companyId);
 
         // Create a new workbook and worksheet
         const workbook = xlsx.utils.book_new();
         const worksheet = xlsx.utils.json_to_sheet(pendingEmiDetails);
+
+        // Auto-resize columns based on content length
+        const columnWidths = Object.keys(pendingEmiDetails[0] || {}).map(key => ({
+            wch: Math.max(key.length, ...pendingEmiDetails.map(item => (item[key]?.toString() || "").length)) + 2
+        }));
+        worksheet["!cols"] = columnWidths;
 
         // Append the worksheet to the workbook
         xlsx.utils.book_append_sheet(workbook, worksheet, 'Pending EMI Details');
@@ -1309,36 +1381,97 @@ exports.downloadPendingEmiDetails = async (req, res) => {
 };
 
 
+
+// exports.getLoanDataLengths = async (req, res) => {
+//     const companyId = req.companyId;
+
+//     try {
+//         // Fetch all data in parallel
+//         const [
+//             pendingEmiData,
+//             overdueData,
+//             closedLoanData,
+//             seizedLoanData,
+//             activeLoanData
+//         ] = await Promise.all([
+//             loanModel.aggregate([{ $match: { "loanDetails.emiPending": true, "loanDetails.isActive": true } }]),
+//             loanModel.aggregate([{ $match: { "loanDetails.totalOverdueAmountToBePaid": { $gt: 0 } } }]), // Overdue
+//             loanModel.aggregate([{ $match: { "loanDetails.isActive": false } }]), // Closed Loans
+//             loanModel.aggregate([{ $match: { "loanDetails.isSeized": true } }]), // Seized Loans
+//             loanModel.aggregate([{ $match: { "loanDetails.isActive": true } }]), // Active Loans
+//         ]);
+
+//         // Filter data for the specific company
+//         const filterByCompanyId = users => 
+//             users.filter(user => user.company && user.company.toString() === companyId);
+
+//         // Calculate lengths
+//         const lengths = {
+//             pendingEmi: filterByCompanyId(pendingEmiData).length,
+//             overdue: filterByCompanyId(overdueData).length,
+//             closedLoan: filterByCompanyId(closedLoanData).length,
+//             seizedLoan: filterByCompanyId(seizedLoanData).length,
+//             activeLoan: filterByCompanyId(activeLoanData).length,
+//         };
+
+//         // Send response
+//         res.status(200).json({
+//             status: 'Success',
+//             data: lengths
+//         });
+
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).json({
+//             status: 'error',
+//             message: 'An error occurred while fetching loan data lengths.'
+//         });
+//     }
+// };
+
 exports.getLoanDataLengths = async (req, res) => {
     const companyId = req.companyId;
 
     try {
-        // Fetch all data in parallel
+        // Fetch counts in parallel with companyId filtering at the database level
         const [
-            pendingEmiData,
-            overdueData,
-            closedLoanData,
-            seizedLoanData,
-            activeLoanData
+            pendingEmiCount,
+            overdueCount,
+            closedLoanCount,
+            seizedLoanCount,
+            activeLoanCount
         ] = await Promise.all([
-            loanModel.aggregate([{ $match: { "loanDetails.emiPending": true, "loanDetails.isActive": true } }]),
-            loanModel.aggregate([{ $match: { "loanDetails.totalOverdueAmountToBePaid": { $gt: 0 } } }]), // Overdue
-            loanModel.aggregate([{ $match: { "loanDetails.isActive": false } }]), // Closed Loans
-            loanModel.aggregate([{ $match: { "loanDetails.isSeized": true } }]), // Seized Loans
-            loanModel.aggregate([{ $match: { "loanDetails.isActive": true } }]), // Active Loans
+            loanModel.aggregate([
+                { $match: { "loanDetails.emiPending": true, "loanDetails.isActive": true, "company": companyId } },
+                { $count: "count" }
+            ]),
+            loanModel.aggregate([
+                { $match: { "loanDetails.totalOverdueAmountToBePaid": { $gt: 0 }, "company": companyId } },
+                { $count: "count" }
+            ]),
+            loanModel.aggregate([
+                { $match: { "loanDetails.isActive": false, "company": companyId } },
+                { $count: "count" }
+            ]),
+            loanModel.aggregate([
+                { $match: { "loanDetails.isSeized": true, "company": companyId } },
+                { $count: "count" }
+            ]),
+            loanModel.aggregate([
+                { $match: { "loanDetails.isActive": true, "company": companyId } },
+                { $count: "count" }
+            ]),
         ]);
 
-        // Filter data for the specific company
-        const filterByCompanyId = users => 
-            users.filter(user => user.company && user.company.toString() === companyId);
+        // Extract counts (if the result is empty, the count is 0)
+        const extractCount = (data) => (data[0] ? data[0].count : 0);
 
-        // Calculate lengths
         const lengths = {
-            pendingEmi: filterByCompanyId(pendingEmiData).length,
-            overdue: filterByCompanyId(overdueData).length,
-            closedLoan: filterByCompanyId(closedLoanData).length,
-            seizedLoan: filterByCompanyId(seizedLoanData).length,
-            activeLoan: filterByCompanyId(activeLoanData).length,
+            pendingEmi: extractCount(pendingEmiCount),
+            overdue: extractCount(overdueCount),
+            closedLoan: extractCount(closedLoanCount),
+            seizedLoan: extractCount(seizedLoanCount),
+            activeLoan: extractCount(activeLoanCount),
         };
 
         // Send response
