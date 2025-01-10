@@ -20,4 +20,5 @@ jobs:
 
     - name: Trigger Jenkins build
       run: |
-        curl -X POST "https://jenkins.logesh.store/job/Backend/build?token=abcd"
+        curl -X POST "curl -X POST "https://[2401:b200:2085:d:9a29:a6ff:fe2d:574c]/job/Backend/build?token=abcd"
+
