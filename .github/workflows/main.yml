@@ -1,0 +1,19 @@
+name: Trigger Jenkins Build
+
+on:
+  push:
+    branches:
+      - main  # Trigger on push to the 'main' branch (change as needed)
+  # Alternatively, you can use pull_request, schedule, etc.
+
+jobs:
+  trigger_jenkins_build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Trigger Jenkins build
+      run: |
+        curl -X POST "https://jenkins.logesh.store/job/Backend/build?token=abcd"
