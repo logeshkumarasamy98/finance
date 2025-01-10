@@ -59,7 +59,12 @@ const userSchema = new mongoose.Schema({
             preCloserInterestAmount: { type: Number, default: null },
             preCloserOverDue: { type: Number, default: null }
         },
-        loanExtraPaid: { type: Number, default: 0 } // New field added
+        loanExtraPaid: { type: Number, default: 0 }, // New field added
+        documents:{
+            reloanElegible: { type: Boolean },
+            settledToName: { type: String, default: null },
+            settledDate: { type: Date }
+        }
     },
     details: {
         loanPayerDetails: {

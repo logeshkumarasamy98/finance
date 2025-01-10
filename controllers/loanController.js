@@ -283,6 +283,72 @@ exports.createUser = async (req, res) => {
     }
 };
 
+exports.createUserWithManualLoanNumber = async (req, res) => {
+    const session = await loanModel.startSession();
+    session.startTransaction();
+
+    try {
+        const companyId = req.companyId;
+        const manualLoanNumber = req.body.loanNumber;
+
+        // Check if the provided loan number already exists
+        const existingLoan = await loanModel.findOne({ company: companyId, loanNumber: manualLoanNumber });
+        if (existingLoan) {
+            throw new Error(`Loan number ${manualLoanNumber} already exists`);
+        }
+
+        // Increment debitReceiptNumber atomically
+        const counter = await Counter.findOneAndUpdate(
+            { company: companyId },
+            { $inc: { debitReceiptNumber: 1 } },
+            { new: true, upsert: true, session }
+        );
+
+        const newReceiptNumber = `D-${counter.debitReceiptNumber}`;
+
+        // Create a new loan document
+        const user = new loanModel({
+            loanNumber: manualLoanNumber,
+            debitReceiptNumber: newReceiptNumber,
+            createdBy: req.userId,
+            company: companyId,
+            ...req.body
+        });
+
+        await user.save({ session });
+
+        // Create ledger entry
+        const ledgerEntry = new ledgerModel({
+            isLoanDebit: true,
+            loanNumber: manualLoanNumber,
+            receiptNumber: newReceiptNumber,
+            remarks: req.body.details.loanPayerDetails.name,
+            total: req.body.loanDetails.totalPrincipalAmount,
+            creditOrDebit: 'Debit',
+            paymentMethod: req.body.paymentMethod,
+            createdBy: req.userId,
+            company: companyId
+        });
+
+        await ledgerEntry.save({ session });
+
+        // Commit the transaction
+        await session.commitTransaction();
+        session.endSession();
+
+        // Update loan details
+        await updateLoanDetails(manualLoanNumber);
+        await updateOverdueInstallmentsForOne(manualLoanNumber);
+
+        res.status(201).json({ status: 'success', message: 'User created successfully', user });
+    } catch (err) {
+        await session.abortTransaction();
+        session.endSession();
+        res.status(422).json({ status: 'error', message: err.message, error: err });
+        console.log(err);
+    }
+};
+
 
 exports.deleteLoan = async (req, res) => {
     const session = await loanModel.startSession();
@@ -879,5 +945,54 @@ exports.updateLoanPayer = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+
+exports.updateLoanDocumentsDetails = async (req, res) => {
+    try {
+        const companyId = req.companyId; // Extracted from the auth middleware
+        const { loanNumber, isDocumentSettled, reloanElegible, settledToName, settledDate } = req.body;
+
+        // Validate input
+        if (!loanNumber) {
+            return res.status(400).json({ message: 'Loan number is required' });
+        }
+
+        if (!companyId) {
+            return res.status(403).json({ message: 'Unauthorized: Company ID is required' });
+        }
+
+        // Filter by companyId and loanNumber, then update
+        const updatedLoan = await loanModel.findOneAndUpdate(
+            { loanNumber, company: companyId }, // Match loanNumber and companyId
+            {
+                $set: {
+                    'loanDetails.isDocumentSettled': isDocumentSettled,
+                    'loanDetails.documents.reloanElegible': reloanElegible,
+                    'loanDetails.documents.settledToName': settledToName,
+                    'loanDetails.documents.settledDate': settledDate,
+                },
+            },
+            { new: true, runValidators: true } // Return the updated document
+        );
+
+        if (!updatedLoan) {
+            return res.status(404).json({ message: 'Loan not found or does not belong to this company' });
+        }
+
+        res.status(200).json({
+            message: 'Loan details updated successfully',
+            updatedFields: {
+                loanNumber,
+                isDocumentSettled,
+                reloanElegible,
+                settledToName,
+                settledDate,
+            },
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'An error occurred while updating the loan details', error });
     }
 };

@@ -13,8 +13,8 @@ const filterDashboard = require('./controllers/filterDashoard');
 const { verifyToken } = require('./customFunctions/authFunction');
 const { updateLoanDetails } = require('./customFunctions/loanFunctions');
 const ledgerModel = require('./model/ledgerModel');
-const jwt = require('jsonwebtoken');
-const Company = require('./model/company');
+
+
 
 // CORS options
 const corsOptions = {
@@ -39,10 +39,12 @@ app.use(cookieParser());
 // Define loan routes
 const loanRouter = express.Router();
 loanRouter.post('/', loanController.createUser);
+loanRouter.post('/createUserWithManualLoanNumber', loanController.createUserWithManualLoanNumber);
 loanRouter.get('/:loanNumber', loanController.getUsers);
 loanRouter.delete('/:loanNumber', loanController.deleteLoan);
 loanRouter.get('/', loanController.getAllUsers);
 loanRouter.patch('/patch/:loanNumber', loanController.updateLoanPayer);
+loanRouter.patch('/updateLoanDocumentsDetails', loanController.updateLoanDocumentsDetails);
 
 // Define filter dashboard routes
 const filterDashboardRouter = express.Router();
@@ -62,6 +64,7 @@ filterDashboardRouter.get('/seizedLoanPayerLength', filterDashboard.seizedLoanPa
 filterDashboardRouter.get('/seizedLoanPayer', filterDashboard.seizedLoanPayer);
 filterDashboardRouter.get('/downloadPendingEmiDetails', filterDashboard.downloadPendingEmiDetails);
 filterDashboardRouter.get('/getLoanDataLengths', filterDashboard.getLoanDataLengths);
+filterDashboardRouter.get('/calculateUnpaidPrincipleSum', filterDashboard.calculateUnpaidPrincipleSum);
 
 // Define auth routes
 const authRouter = express.Router();
