@@ -14,6 +14,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Check DNS resolution for jenkins.logesh.store
+      run: |
+        nslookup jenkins.logesh.store
+
     - name: Trigger Jenkins build
       run: |
         curl -X POST "https://jenkins.logesh.store/job/Backend/build?token=abcd"
