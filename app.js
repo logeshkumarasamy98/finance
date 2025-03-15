@@ -3,13 +3,18 @@ const cors = require('cors');
 const app = express();
 const cookieParser = require('cookie-parser');
 
+// Set the environment variable for NODE_ENV
+process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+
+
 const UserModel = require('./model/authModel');
 const loanController = require('./controllers/loanController');
 const ledgerController = require('./controllers/ledgerController');
 const precloserController = require('./controllers/precloserController');
 const authController = require('./controllers/authController');
 const auth = require('./customFunctions/authFunction');
-const filterDashboard = require('./controllers/filterDashoard');
+const filterDashboard = require('./controllers/filterDashboard');
+
 const { verifyToken } = require('./customFunctions/authFunction');
 const { updateLoanDetails } = require('./customFunctions/loanFunctions');
 const ledgerModel = require('./model/ledgerModel');
@@ -49,9 +54,9 @@ loanRouter.patch('/updateLoanDocumentsDetails', loanController.updateLoanDocumen
 // Define filter dashboard routes
 const filterDashboardRouter = express.Router();
 filterDashboardRouter.get('/activeLoanPayer', filterDashboard.activeLoanPayer);
-filterDashboardRouter.get('/vehicleTypePercentage', filterDashboard.vehicleTypePercentage);
+// filterDashboardRouter.get('/vehicleTypePercentage', filterDashboard.vehicleTypePercentage);
 filterDashboardRouter.get('/LoanPayerDetails/:loanNumber', filterDashboard.LoanPayerDetails);
-filterDashboardRouter.get('/getLoanDetailsByPhoneNumber/:mobileNumber', filterDashboard.getLoanDetailsByPhoneNumber);
+// filterDashboardRouter.get('/getLoanDetailsByPhoneNumber/:mobileNumber', filterDashboard.getLoanDetailsByPhoneNumber);
 filterDashboardRouter.get('/getPendingEmiDetails', filterDashboard.getPendingEmiDetails);
 filterDashboardRouter.get('/pendingEmiPayerLength', filterDashboard.pendingEmiPayerLength);
 filterDashboardRouter.get('/ledgerDatas', filterDashboard.ledgerDatas);

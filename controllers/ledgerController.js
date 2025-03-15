@@ -1,3 +1,4 @@
+const { handleError, sendSuccessResponse } = require('../utils/responseHandler');
 const ledgerModel = require('./../model/ledgerModel');
 
 exports.expense = async (req, res) => {
@@ -26,12 +27,11 @@ exports.expense = async (req, res) => {
         await session.commitTransaction();
         session.endSession();
 
-        res.status(200).json({ success: true, message: 'Ledger entry created successfully.' });
+        sendSuccessResponse(res, 'Ledger entry created successfully.');
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        console.error('Error creating ledger entry:', error);
-        res.status(500).json({ success: false, message: 'Internal server error.' });
+        handleError(res, error);
     }
 };
 
@@ -67,11 +67,10 @@ exports.investment = async (req, res) => {
         await session.commitTransaction();
         session.endSession();
 
-        res.status(200).json({ success: true, message: 'Investment ledger entry created successfully.' });
+        sendSuccessResponse(res, 'Investment ledger entry created successfully.');
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        console.error('Error creating investment ledger entry:', error);
-        res.status(500).json({ success: false, message: 'Internal server error.' });
+        handleError(res, error);
     }
 };

@@ -21,7 +21,7 @@
 //     console.log('MongoDB connected...');
 //     console.log('Server started...');
 //   } catch (error) {
-//     console.error('Error connecting to MongoDB:', error);
+//     logger.error('Error connecting to MongoDB:', error);
 //   }
 // });
 
